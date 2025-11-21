@@ -18,6 +18,8 @@ Python 3.x and the following modules installed:
 - `vector`  
 - `numpy`
 
+JPL DE441 at the project folder
+
 ---
 
 ## **How to Run**
@@ -28,3 +30,4 @@ To run the main eclipse computation script:
 
 ```bash
 uv run main.py
+

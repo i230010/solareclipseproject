@@ -8,4 +8,4 @@ used in astronomical computations.
 """
 
 # Path to the NASA JPL ephemeris binary file (e.g., DE441)
-EPHEM_PATH: str = "./de441.bsp"
+EPHEM_PATH: str = "./ephem/de441.bsp"

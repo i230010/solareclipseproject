@@ -18,7 +18,7 @@ Python 3.x and the following modules installed:
 - `vector`  
 - `numpy`
 
-JPL DE441 at the project folder
+JPL Development Ephemerides (DEXXX) at the "ephem" folder
 
 ---
 

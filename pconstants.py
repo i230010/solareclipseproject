@@ -1,11 +1,9 @@
 """
 pconstants.py
 -----------------
+Stores physical constants used throughout the eclipse computations.
 
-This module stores planet-related physical constants used throughout
-the project. Values are taken from standard astronomical and geodetic
-references.
-
+All distances are in kilometers unless specified otherwise.
 """
 
 # Radius of the Sun in kilometers
@@ -17,8 +15,14 @@ EARTH_RADIUS_KM: float = 6_378.137
 # Mean radius of the Moon in kilometers
 MOON_RADIUS_KM: float = 1_737.400
 
-# Earth's eccentricity squared (WGS-84)
+# Earth's eccentricity squared (WGS-84) used for geodetic calculations
 E_SQUARED: float = 0.006694385
 
-# Ellipsoid correction factor used for geodetic calculations
+# Ellipsoid correction factor for converting between geodetic and geographic coordinates
 ELLIPSOID_CORRECTION: float = 1.00336409
+
+# Complement of Earth's flattening factor (1 - f)
+ONE_MINUS_F: float = 0.99664719
+
+# Correction factor used in longitude calculation for delta_t adjustment
+DELTA_LAMBDA_FACTOR: float = 0.00417807  # degrees per second

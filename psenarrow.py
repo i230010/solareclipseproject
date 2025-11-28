@@ -4,80 +4,97 @@ psenarrow.py
 
 Provides a high-resolution search routine for locating the exact moment of
 closest angular approach between the Sun and Moon.
-
 """
 
 from skyfield.api import load
 import math
 
-import pconstants
-import pdefilepath
-import pedatetime
+import pconstants  # Custom module containing constants like MOON_RADIUS_KM, EARTH_RADIUS_KM, SUN_RADIUS_KM
+import pdefilepath  # Custom module containing file paths for ephemerides
+import pedatetime  # Custom datetime class used in this project
 
 
-def senarrow(starttime: pedatetime.datetime, endtime: pedatetime.datetime):
+def senarrow(
+    starttime: pedatetime.datetime, endtime: pedatetime.datetime
+) -> tuple[str, float]:
     """
-    Finds the time and angular distance of the closest Sun-Moon approach.
+    Finds the time and angular distance of the closest Sun-Moon approach
+    within the given time interval.
 
     Args:
-            starttime (datetime): Start of search range (UTC)
-            endtime (datetime): End of search range (UTC)
+        starttime (pedatetime.datetime): Start of search range (UTC)
+        endtime (pedatetime.datetime): End of search range (UTC)
 
     Returns:
-            tuple:
-                    date (datetime): Time of minimum separation
-                    min_sep_angle (float): Minimum angular separation (radians)
+        tuple:
+            date (str): Time of minimum separation in ISO format
+            min_sep_angle (float): Minimum angular separation (radians)
+            Returns (None, None) if no eclipse is detected.
     """
-    separations = []
+
+    # Lists to store angular separations and corresponding timestamps
+    angular_separations = []
     timestamps = []
 
-    # Load Skyfield ephemerides and timescale once
-    planets = load(pdefilepath.EPHEM_PATH)
+    # Load planetary ephemerides and timescale
+    eph = load(pdefilepath.EPHEM_PATH)
     ts = load.timescale()
 
-    earth, sun, moon = planets["earth"], planets["sun"], planets["moon"]
+    # Extract Earth, Sun, and Moon objects
+    earth, sun, moon = eph["earth"], eph["sun"], eph["moon"]
 
-    curtime = starttime.copy()
+    # Initialize current scanning time
+    current_time = starttime.copy()
 
-    # Step through each second to find region of closest approach
-    while curtime <= endtime:
-        t = ts.utc(
-            curtime.year,
-            curtime.month,
-            curtime.day,
-            curtime.hour,
-            curtime.minute,
-            curtime.second,
+    # Iterate through each second in the interval
+    while current_time <= endtime:
+        # Convert current time to Skyfield Time object
+        skyfield_time = ts.utc(
+            current_time.year,
+            current_time.month,
+            current_time.day,
+            current_time.hour,
+            current_time.minute,
+            current_time.second,
         )
 
-        # Apparent positions
-        obs_sun = earth.at(t).observe(sun)
-        obs_moon = earth.at(t).observe(moon)
+        # Compute apparent positions of Sun and Moon from Earth
+        sun_position = earth.at(skyfield_time).observe(sun)
+        moon_position = earth.at(skyfield_time).observe(moon)
 
-        # Angular separation (radians)
-        sep_angle = obs_moon.apparent().separation_from(obs_sun.apparent()).radians
+        # Compute angular separation (radians) between Moon and Sun
+        angular_separation = (
+            moon_position.apparent().separation_from(sun_position.apparent()).radians
+        )
 
-        # Distances (km)
-        _, _, sdist = obs_sun.radec()
-        _, _, mdist = obs_moon.radec()
-        sdist_km, mdist_km = sdist.km, mdist.km
+        # Get distances of Sun and Moon from Earth in kilometers
+        _, _, sun_distance = sun_position.radec()
+        _, _, moon_distance = moon_position.radec()
+        sun_distance_km, moon_distance_km = sun_distance.km, moon_distance.km
 
-        # Eclipse geometry threshold (radians)
-        eclipse_threshold_angle = math.asin(
-            (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / mdist_km
+        # Compute eclipse geometry threshold (radians)
+        eclipse_threshold = math.asin(
+            (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_distance_km
         ) + math.asin(
-            (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sdist_km
+            (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_distance_km
         )
 
-        if eclipse_threshold_angle >= sep_angle:
-            separations.append(sep_angle)
-            timestamps.append(curtime.copy())
+        # Only consider times where separation is within eclipse threshold
+        if eclipse_threshold >= angular_separation:
+            angular_separations.append(angular_separation)  # Store angular separation
+            timestamps.append(current_time.copy())  # Store timestamp
 
-        # Increment time by 1 second
-        curtime.add_second()
+        # Move to the next second
+        current_time.add_second()
 
-    min_sep_angle = min(separations)
-    min_index = separations.index(min_sep_angle)
-    date = timestamps[min_index]
+    # Edge case: No times were within threshold
+    if not angular_separations:
+        return None, None
 
-    return date.isoformat(), min_sep_angle
+    # Find the minimum separation and corresponding timestamp
+    min_sep_angle = min(angular_separations)
+    min_index = angular_separations.index(min_sep_angle)
+    min_time = timestamps[min_index]
+
+    # Return ISO format time and minimum separation
+    return min_time.isoformat(), min_sep_angle

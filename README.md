@@ -12,11 +12,15 @@ The project uses **Skyfield** for astronomical calculations, along with custom m
 
 ## **Requirements**
 
-Python 3.x and the following modules installed:
+Python 3.14 and the following modules installed:
 
 - `skyfield`  
 - `vector`  
 - `numpy`
+- `scipy`  
+- `pandas`  
+- `plotly`
+- `kaleido`
 
 JPL Development Ephemerides (DEXXX) at the "ephem" folder
 
@@ -30,4 +34,5 @@ To run the main eclipse computation script:
 
 ```bash
 uv run main.py
+
 

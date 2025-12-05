@@ -14,11 +14,7 @@ The project uses **Skyfield** for astronomical calculations, along with custom m
 
 ## **Requirements**
 
-Python 3.x and the following modules installed:
-
-* skyfield
-* vector
-* numpy
+Python 3.14:
 
 JPL Development Ephemerides (DEXXX) at the "ephem" folder
 

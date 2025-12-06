@@ -1,6 +1,6 @@
 [project]
 name = "solareclipseproject"
-version = "1.0.3"
+version = "1.0.5"
 description = "Solar Eclipse Programming in Python"
 readme = "README.md"
 requires-python = ">=3.14"

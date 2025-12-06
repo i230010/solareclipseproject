@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 
 * Solar Eclipse Besselian Micro Rounding Error
 
+* Fixed Solar Eclipse Path Generator
+
 
 
 

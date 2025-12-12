@@ -26,10 +26,12 @@ def poly(coeffs: List[float], t: float) -> float:
     float
         Polynomial evaluated at t.
     """
-    return coeffs[0] + coeffs[1]*t + coeffs[2]*t*t + coeffs[3]*t*t*t
+    return coeffs[0] + coeffs[1] * t + coeffs[2] * t * t + coeffs[3] * t * t * t
 
 
-def penumbra_distance(t: float, x_coeffs: List[float], y_coeffs: List[float], l_coeffs: List[float]) -> float:
+def penumbra_distance(
+    t: float, x_coeffs: List[float], y_coeffs: List[float], l_coeffs: List[float]
+) -> float:
     """
     Compute the penumbral distance function D(t):
         D(t) = sqrt(x(t)^2 + y(t)^2) - (1 + L(t))
@@ -52,10 +54,12 @@ def penumbra_distance(t: float, x_coeffs: List[float], y_coeffs: List[float], l_
     x = poly(x_coeffs, t)
     y = poly(y_coeffs, t)
     radius = poly(l_coeffs, t)
-    return (x**2 + y**2)**0.5 - (1 + radius)
+    return (x**2 + y**2) ** 0.5 - (1 + radius)
 
 
-def startendtime(x_coeffs: List[float], y_coeffs: List[float], l_coeffs: List[float]) -> Tuple[float, float]:
+def startendtime(
+    x_coeffs: List[float], y_coeffs: List[float], l_coeffs: List[float]
+) -> Tuple[float, float]:
     """
     Solve for start and end times of the penumbra or umbra intersection.
 

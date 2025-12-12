@@ -4,8 +4,10 @@ psecentral.py
 Utility functions for determining whether a given gamma value lies
 within specific geometric or physical bounds.
 
-"""
+"""
+
 import pconstants
+
 
 def central(gamma: float) -> bool:
     """

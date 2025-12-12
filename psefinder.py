@@ -6,7 +6,7 @@ Searches for potential solar eclipses within a specified time interval using
 Skyfield ephemerides and custom project utilities.
 """
 
-from skyfield.api import load
+from skyfield.api import load, GREGORIAN_START
 import math
 
 import psenarrow  # Custom module for precise eclipse timing
@@ -18,8 +18,9 @@ import pedatetime  # Custom datetime class used in this project
 def sefinder(
     start_time: pedatetime.datetime,
     end_time: pedatetime.datetime,
-    printsep: bool,
     step: pedatetime.timedelta,
+    tt: bool,
+    printsep: bool
 ) -> None:
     """
     Search for possible solar eclipses within a given time range.
@@ -32,8 +33,8 @@ def sefinder(
         The end of the search interval.
     printsep : bool
         Whether to print the minimum angular separation along with the date.
-    shrs : int
-        Step size in hours for scanning the time interval.
+    step: pedatetime.timedelta
+        Step size for scanning the time interval.
 
     Notes
     -----
@@ -47,6 +48,7 @@ def sefinder(
 
     # Load Skyfield timescale for converting datetimes
     timescale = load.timescale()
+    timescale.julian_calendar_cutoff = GREGORIAN_START
 
     # Extract Earth, Sun, and Moon objects for position calculations
     earth, sun, moon = eph["earth"], eph["sun"], eph["moon"]
@@ -100,17 +102,21 @@ def sefinder(
 
             # Refine to precise eclipse time and minimum angular separation
             eclipse_date, min_separation = psenarrow.senarrow(
-                start_estimate, end_estimate
+                start_estimate, end_estimate, tt
             )
 
+            if tt:
+                eclipse_date = eclipse_date + str(" TT")
+            else :
+                eclipse_date = eclipse_date + str("Z")
             # Print results if a valid eclipse is found
             if eclipse_date:
                 if not printsep:
                     # Only print date of maximum eclipse
-                    print(eclipse_date)
+                    print(f"Approx: {eclipse_date}")
                 else:
                     # Print date and minimum angular separation
-                    print(eclipse_date, f"{min_separation} rad")
+                    print(f"Approx: {eclipse_date}, Approx: {min_separation} rad")
 
             # Skip roughly one synodic month (~27 days) to avoid detecting same eclipse again
             current_time.add_days(27)

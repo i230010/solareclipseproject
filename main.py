@@ -7,7 +7,7 @@ Besselian elements computation, maximum eclipse time, gamma value, and
 plotting the eclipse path.
 """
 
-from skyfield.api import load
+from skyfield.api import load, GREGORIAN_START
 
 import pedatetime
 import psebessel
@@ -15,7 +15,6 @@ import psegam
 import pcentercoords
 import pstartendtimel
 import psecentral
-
 
 def decimal_hours(hours: int, minutes: int, seconds: int) -> float:
     """Convert hours, minutes, and seconds to decimal hours."""
@@ -33,77 +32,99 @@ def main():
     # print("Eclipse Search Example:")
     # import psefinder
     #
-    # dt_start = pedatetime.datetime(2020, 1, 1, 0, 0, 0)
-    # dt_end = pedatetime.datetime(2020, 7, 1, 0, 0, 0)
+    # dt_start = pedatetime.datetime(2024, 1, 1, 0, 0, 0)
+    # dt_end = pedatetime.datetime(2025, 1, 1, 0, 0, 0)
     #
-    # psefinder.sefinder(dt_start, dt_end, False, pedatetime.timedelta(0, 2, 0, 0))
-    # psefinder.sefinder(dt_start, dt_end, True, pedatetime.timedelta(0, 2, 0, 0))  # includes sep angle
+    # psefinder.sefinder(dt_start, dt_end, pedatetime.timedelta(0, 2, 0, 0), False, False)
+    # psefinder.sefinder(dt_start, dt_end, pedatetime.timedelta(0, 2, 0, 0), False, True)  # includes sep angle
 
     print("")
 
     # ------------------------------------------------------------------
     # Besselian Elements Example
     # ------------------------------------------------------------------
-    # dt_max = pedatetime.datetime(2024, 4, 8, 18, 17, 20)
-    dt_max = pedatetime.datetime(2020, 6, 21, 6, 40, 6)
-    print(f"Data for {dt_max.isoformat()}Z Solar Eclipse")
+    ts = load.timescale()
+    ts.julian_calendar_cutoff = GREGORIAN_START
+    
+    #for UTC time
+    dt_max_utc = pedatetime.datetime(2024, 4, 8, 18, 17, 20)
+    t_max = ts.utc(
+        dt_max_utc.year,
+        dt_max_utc.month,
+        dt_max_utc.day,
+        dt_max_utc.hour,
+        dt_max_utc.minute,
+        dt_max_utc.second,
+    )
+    delta_t_sec = round(float(t_max.delta_t))
+    dt_max_tt = dt_max_utc + pedatetime.timedelta(0, 0, 0, delta_t_sec)
+    t_max = ts.tt(
+        dt_max_tt.year,
+        dt_max_tt.month,
+        dt_max_tt.day,
+        dt_max_tt.hour,
+        dt_max_tt.minute,
+        dt_max_tt.second,
+    )
+    
+    #for TT time
+    """
+    dt_max_tt = pedatetime.datetime(2024, 10, 2, 18, 46, 13)
+    t_max = ts.tt(
+        dt_max_tt.year,
+        dt_max_tt.month,
+        dt_max_tt.day,
+        dt_max_tt.hour,
+        dt_max_tt.minute,
+        dt_max_tt.second,
+    )
+    delta_t_sec = round(float(t_max.delta_t))
+    dt_max_utc = dt_max_tt - pedatetime.timedelta(0, 0, 0, delta_t_sec)
+    t_max = ts.utc(
+        dt_max_utc.year,
+        dt_max_utc.month,
+        dt_max_utc.day,
+        dt_max_utc.hour,
+        dt_max_utc.minute,
+        dt_max_utc.second,
+    )
+    delta_t_sec = round(float(t_max.delta_t))
+    """
+
+    print(f"Data for {dt_max_utc.isoformat()}Z ({dt_max_tt.isoformat()} TT) Eclipse")
 
     # Round down to the nearest hour for polynomial interpolation
-    dt_max_rounded = dt_max.copy()
-    if dt_max.minute >= 30:
-        dt_max_rounded.sub_minutes(dt_max.minute)
-        dt_max_rounded.sub_seconds(dt_max.second)
+    dt_max_rounded = dt_max_tt.copy()
+    if dt_max_tt.minute >= 30:
+        dt_max_rounded.sub_minutes(dt_max_tt.minute)
+        dt_max_rounded.sub_seconds(dt_max_tt.second)
         dt_max_rounded.add_hour()
-    else :
-        dt_max_rounded.sub_minutes(dt_max.minute)
-        dt_max_rounded.sub_seconds(dt_max.second)
-    
+    else:
+        dt_max_rounded.sub_minutes(dt_max_tt.minute)
+        dt_max_rounded.sub_seconds(dt_max_tt.second)
+
     # Compute Besselian elements at times -2h, -1h, 0h, +1h, +2h
-    TM2 = psebessel.besselian_find(
-        dt_max_rounded - pedatetime.timedelta(0, 2, 0, 0)
-    )
-    TM1 = psebessel.besselian_find(
-        dt_max_rounded - pedatetime.timedelta(0, 1, 0, 0)
-    )
+    TM2 = psebessel.besselian_find(dt_max_rounded - pedatetime.timedelta(0, 2, 0, 0))
+    TM1 = psebessel.besselian_find(dt_max_rounded - pedatetime.timedelta(0, 1, 0, 0))
     T = psebessel.besselian_find(dt_max_rounded)
-    TP1 = psebessel.besselian_find(
-        dt_max_rounded + pedatetime.timedelta(0, 1, 0, 0)
-    )
-    TP2 = psebessel.besselian_find(
-        dt_max_rounded + pedatetime.timedelta(0, 2, 0, 0)
-    )
+    TP1 = psebessel.besselian_find(dt_max_rounded + pedatetime.timedelta(0, 1, 0, 0))
+    TP2 = psebessel.besselian_find(dt_max_rounded + pedatetime.timedelta(0, 2, 0, 0))
 
     # Generate polynomial coefficients
-    X_poly = psebessel.find_besselian_polynomial(
-        TM2[0], TM1[0], T[0], TP1[0], TP2[0]
-    )
-    Y_poly = psebessel.find_besselian_polynomial(
-        TM2[1], TM1[1], T[1], TP1[1], TP2[1]
-    )
-    D_poly = psebessel.find_besselian_polynomial(
-        TM2[2], TM1[2], T[2], TP1[2], TP2[2]
-    )
-    L1_poly = psebessel.find_besselian_polynomial(
-        TM2[3], TM1[3], T[3], TP1[3], TP2[3]
-    )
-    L2_poly = psebessel.find_besselian_polynomial(
-        TM2[4], TM1[4], T[4], TP1[4], TP2[4]
-    )
-    Micro_poly = psebessel.find_besselian_polynomial(
-        TM2[5], TM1[5], T[5], TP1[5], TP2[5]
-    )
+    X_poly = psebessel.find_besselian_polynomial(TM2[0], TM1[0], T[0], TP1[0], TP2[0])
+    Y_poly = psebessel.find_besselian_polynomial(TM2[1], TM1[1], T[1], TP1[1], TP2[1])
+    D_poly = psebessel.find_besselian_polynomial(TM2[2], TM1[2], T[2], TP1[2], TP2[2])
+    L1_poly = psebessel.find_besselian_polynomial(TM2[3], TM1[3], T[3], TP1[3], TP2[3])
+    L2_poly = psebessel.find_besselian_polynomial(TM2[4], TM1[4], T[4], TP1[4], TP2[4])
+    Micro0, Micro1 = psebessel.compute_mu(dt_max_rounded)
+    Micro_poly = Micro0, Micro1, 0, 0
 
     # Unpack polynomial coefficients
     tan_f1, tan_f2 = T[6], T[7]
 
     # Display coefficients
-    print(
-        f"{'n':<3} {'X':>12} {'Y':>14} {'D':>14} "
-        f"{'L1':>14} {'L2':>14} {'Micro':>14}"
-    )
-    for n, vals in enumerate(
-        zip(X_poly, Y_poly, D_poly, L1_poly, L2_poly, Micro_poly)
-    ):
+    print(f"{'n':<3} {'X':>12} {'Y':>14} {'D':>14} {'L1':>14} {'L2':>14} {'Micro':>14}")
+    for n, vals in enumerate(zip(X_poly, Y_poly, D_poly, L1_poly, L2_poly, Micro_poly)):
         print(
             f"{n} "
             f"{vals[0]:14.10f} {vals[1]:14.10f} {vals[2]:14.10f} "
@@ -115,31 +136,30 @@ def main():
     # ------------------------------------------------------------------
     # Maximum Eclipse Time
     # ------------------------------------------------------------------
-    ts = load.timescale()
-    t_max = ts.utc(
-        dt_max.year, dt_max.month, dt_max.day,
-        dt_max.hour, dt_max.minute, dt_max.second
-    )
-    
-    #T0
-    decimal_time = (
-        decimal_hours(
-            int(t_max.tt_strftime("%H")),
-            int(t_max.tt_strftime("%M")),
-            int(t_max.tt_strftime("%S")),
-        )
-        - dt_max_rounded.hour
-    )
 
-    delta_t = t_max.delta_t
-    print(f"Maximum Eclipse: {t_max.tt_strftime()}")
-    print(f"Delta T: {delta_t}s")
+    # T0
+    decimal_time_tt = (
+        (
+            pedatetime.datetime(
+                dt_max_tt.year,
+                dt_max_tt.month,
+                dt_max_tt.day,
+                dt_max_tt.hour,
+                dt_max_tt.minute,
+                dt_max_tt.second,
+            )
+        )
+        - dt_max_rounded.copy()
+    ).total_seconds / 3600
+
+    print(f"Maximum Eclipse: {dt_max_tt.isoformat()} TT")
+    print(f"Delta T: {delta_t_sec}s")
 
     # ------------------------------------------------------------------
     # Gamma at Maximum Eclipse
     # ------------------------------------------------------------------
 
-    gamma_val = psegam.gamma(X_poly, Y_poly, decimal_time)
+    gamma_val = psegam.gamma(X_poly, Y_poly, decimal_time_tt)
     print(f"Gamma: {gamma_val}")
 
     print(
@@ -154,10 +174,12 @@ def main():
     # ------------------------------------------------------------------
     # Maximum Eclipse Geographic Location
     # ------------------------------------------------------------------
-    lat_max, lon_max = pcentercoords.coords(
-        X_poly, Y_poly, D_poly, Micro_poly, delta_t, decimal_time
-    )
-    print(f"Maximum Eclipse Location: {lat_max}, {lon_max}")
+    if psecentral.central:
+        lat_max, lon_max = pcentercoords.coords(
+            X_poly, Y_poly, D_poly, Micro_poly, delta_t_sec, decimal_time_tt
+        )
+        print(f"Maximum Eclipse Location: {lat_max}, {lon_max}")
+
 
     # ------------------------------------------------------------------
     # Eclipse Start and End Times
@@ -167,31 +189,19 @@ def main():
     print(f"T0: {base_dt_hour.isoformat()} TT")
 
     # Penumbra
-    t_start_pen, t_end_pen = pstartendtimel.startendtime(
-        X_poly, Y_poly, L1_poly
-    )
+    t_start_pen, t_end_pen = pstartendtimel.startendtime(X_poly, Y_poly, L1_poly)
 
-    tt_start_pen = base_dt_hour + pedatetime.timedelta(
-        0, 0, 0, int(t_start_pen * 3600)
-    )
-    tt_end_pen = base_dt_hour + pedatetime.timedelta(
-        0, 0, 0, int(t_end_pen * 3600)
-    )
+    tt_start_pen = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(t_start_pen * 3600))
+    tt_end_pen = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(t_end_pen * 3600))
 
     print(f"Eclipse Start (Penumbra): {tt_start_pen.isoformat()} TT")
     print(f"Eclipse End (Penumbra):   {tt_end_pen.isoformat()} TT")
 
     # Umbra
-    t_start_umb, t_end_umb = pstartendtimel.startendtime(
-        X_poly, Y_poly, L2_poly
-    )
+    t_start_umb, t_end_umb = pstartendtimel.startendtime(X_poly, Y_poly, L2_poly)
 
-    tt_start_umb = base_dt_hour + pedatetime.timedelta(
-        0, 0, 0, int(t_start_umb * 3600)
-    )
-    tt_end_umb = base_dt_hour + pedatetime.timedelta(
-        0, 0, 0, int(t_end_umb * 3600)
-    )
+    tt_start_umb = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(t_start_umb * 3600))
+    tt_end_umb = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(t_end_umb * 3600))
 
     print(f"Eclipse Start (Umbra):    {tt_start_umb.isoformat()} TT")
     print(f"Eclipse End (Umbra):      {tt_end_umb.isoformat()} TT")
@@ -200,6 +210,7 @@ def main():
     # Compute Eclipse Path for Plotting
     # ------------------------------------------------------------------
     import plotly.graph_objects as go
+
     step_sec = 60
     start_time = t_start_pen
     end_time = t_end_pen
@@ -213,15 +224,16 @@ def main():
     while current_time < end_time:
         current_time += step_hours
         lat, lon = pcentercoords.coords(
-            X_poly, Y_poly, D_poly, Micro_poly, delta_t, current_time
+            X_poly, Y_poly, D_poly, Micro_poly, delta_t_sec, current_time
         )
+
         if lat is not None and lon is not None:
             path_lats.append(lat)
             path_lons.append(lon)
-            
-#     ------------------------------------------------------------------
-#     Plot Eclipse Path
-#     ------------------------------------------------------------------
+
+    #     ------------------------------------------------------------------
+    #     Plot Eclipse Path
+    #     ------------------------------------------------------------------
     fig = go.Figure()
 
     fig.add_trace(
@@ -230,8 +242,24 @@ def main():
             lon=path_lons,
             mode="lines",
             line=dict(width=2, color="black"),
+            showlegend=False
         )
     )
+
+    fig.add_trace(
+        go.Scattergeo(
+            lat=[lat_max],
+            lon=[lon_max],
+            mode="markers",
+            marker=dict(
+                size=15,
+                color="white",
+                line=dict(width=3, color="black")
+            ),
+            showlegend=False
+        )
+    )
+
 
     fig.update_geos(
         projection_type="orthographic",

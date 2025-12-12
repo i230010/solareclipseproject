@@ -6,7 +6,7 @@ Provides a high-resolution search routine for locating the exact moment of
 closest angular approach between the Sun and Moon.
 """
 
-from skyfield.api import load
+from skyfield.api import load, GREGORIAN_START
 import math
 
 import pconstants  # Custom module containing constants like MOON_RADIUS_KM, EARTH_RADIUS_KM, SUN_RADIUS_KM
@@ -15,7 +15,7 @@ import pedatetime  # Custom datetime class used in this project
 
 
 def senarrow(
-    starttime: pedatetime.datetime, endtime: pedatetime.datetime
+    starttime: pedatetime.datetime, endtime: pedatetime.datetime, tt: bool
 ) -> tuple[str, float]:
     """
     Finds the time and angular distance of the closest Sun-Moon approach
@@ -39,6 +39,7 @@ def senarrow(
     # Load planetary ephemerides and timescale
     eph = load(pdefilepath.EPHEM_PATH)
     ts = load.timescale()
+    ts.julian_calendar_cutoff = GREGORIAN_START
 
     # Extract Earth, Sun, and Moon objects
     earth, sun, moon = eph["earth"], eph["sun"], eph["moon"]
@@ -96,5 +97,23 @@ def senarrow(
     min_index = angular_separations.index(min_sep_angle)
     min_time = timestamps[min_index]
 
+    # Add tt if the user wants
+    t = ts.utc(
+        min_time.year,
+        min_time.month,
+        min_time.day,
+        min_time.hour,
+        min_time.minute,
+        min_time.second,
+    )
+
+    return_time = min_time.copy()
+    if tt:
+        return_time = min_time.copy() + pedatetime.timedelta(
+            0, 0, 0, round(float(t.delta_t))
+        )
+    else:
+        return_time = min_time.copy()
+
     # Return ISO format time and minimum separation
-    return min_time.isoformat(), min_sep_angle
+    return return_time.isoformat(), min_sep_angle

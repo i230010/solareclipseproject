@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 
 
 
+## \[1.0.6]
+
+### Added
+
+* Maximum eclipse marker
+
+### Changed
+
+* Solar Eclipse Finder function
+
+
+
+### Fixed
+
+* Solar Eclipse Micro error
+
+* Solar Eclipse delta_t error
+
+* Fixed Julian Cutoff error
+
+
+
+
 ## \[1.0.5]
 
 ### Fixed

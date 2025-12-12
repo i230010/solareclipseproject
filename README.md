@@ -32,9 +32,26 @@ To run the main eclipse computation script: `uv run main.py`
 
 
 
+## **Notes**
+
+This code is for demonstrating how to compute solar eclipses using besselian elements
+
+Accuracy varies
+
+This project is for archiving solar eclipses from year range of dexxx
+
+I (the project owner) am a bit busy
+
+THERES A LOT OF PROBLEMS WITH THIS PROJECT SO I MAY TAKE TIME TO FIX THEM ALL
+
+
+
+
+
 ## **TODO**
+
 Add Solar Eclipse Local Circumstances Calculator
 
-Add Solar Eclipse Type
-
 Add Penumbral/Umbral Limits
+
+Add Solar Eclipse Type

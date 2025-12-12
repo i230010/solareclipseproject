@@ -8,7 +8,7 @@ polynomials to these elements for smooth interpolation.
 
 import math
 import numpy as np
-from skyfield.api import load
+from skyfield.api import load, GREGORIAN_START
 from skyfield.units import Angle
 import vector
 
@@ -68,8 +68,9 @@ def besselian_find(
 
     # Convert datetime to Skyfield Time object in Terrestrial Time (TT)
     ts = load.timescale()
+    ts.julian_calendar_cutoff = GREGORIAN_START
     t_sf = ts.tt(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
-
+    
     # Compute apparent positions of Sun and Moon from Earth's center
     obs_sun = earth.at(t_sf).observe(sun)
     obs_moon = earth.at(t_sf).observe(moon)
@@ -112,7 +113,10 @@ def besselian_find(
     shadow_decl = math.asin(shadow_sin_decl)
 
     # Hour angle of Sun minus shadow axis angle
-    sun_hour_angle = (Angle(degrees=(t_sf.gast * 15)).radians - shadow_axis_angle) % (2 * math.pi)
+    sun_hour_angle = (Angle(degrees=(t_sf.gast * 15)).radians - shadow_axis_angle) % (
+        2 * math.pi
+    )
+    
 
     # Transform Moon coordinates relative to shadow axis
     moon_x = moon_radius_earth_r * (
@@ -158,13 +162,59 @@ def besselian_find(
     return (
         moon_x,
         moon_y,
-        Angle(radians=shadow_decl).degrees,
+        Angle(radians=shadow_decl).degrees, #unfiltered micro
         northern_limit,
         southern_limit,
         Angle(radians=sun_hour_angle).degrees,
         tangent_north,
         tangent_south,
     )
+
+def fit_hour_angle_polynomial(H_m2h, H_m1h, H_0h, H_p1h, H_p2h):
+    """
+    Fit a cubic polynomial H(t) = c0 + c1*t + c2*t^2 + c3*t^3
+    to hour-angle values at t = -2h, -1h, 0h, +1h, +2h.
+
+    Returns:
+        coeffs : ndarray
+            Polynomial coefficients [c0, c1, c2, c3]
+        mu : float
+            Linear coefficient c1 = μ (degrees per hour)
+    """
+    # Vandermonde matrix for t = -2, -1, 0, 1, 2
+    A = np.array([
+        [1, -2, 4, 8],
+        [1, -1, 1, -1],
+        [1,  0, 0, 0],
+        [1,  1, 1, 1],
+        [1,  2, 4, 8]
+    ], dtype=float)
+
+    # Hour-angle samples
+    H_samples = np.array([H_m2h, H_m1h, H_0h, H_p1h, H_p2h], dtype=float)
+
+    # Solve least-squares system
+    coeffs, _, _, _ = np.linalg.lstsq(A, H_samples, rcond=None)
+
+    # μ is the linear coefficient c1
+    mu = coeffs[1]
+
+    return coeffs, mu
+
+def compute_mu(dt, dt_seconds=1):
+    t0 = dt
+    t1 = dt + pedatetime.timedelta(0, 0, 0, dt_seconds)
+
+    # Compute hour angle difference for Sun relative to shadow axis
+    _, _, _, _, _, H0, _, _ = besselian_find(t0)
+    _, _, _, _, _, H1, _, _ = besselian_find(t1)
+
+    # Ensure continuity across 360°
+    dH = (H1 - H0 + 180) % 360 - 180
+
+    # μ = change in degrees per hour
+    mu = dH / (dt_seconds / 3600)  # degrees per hour
+    return H0, mu
 
 
 # -----------------------------------------------------------------------------

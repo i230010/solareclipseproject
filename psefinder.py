@@ -1,65 +1,61 @@
 """
 psefinder.py
------------------
-
-Searches for potential solar eclipses within a specified time interval using
-Skyfield ephemerides and custom project utilities.
+------------
+Searches for potential solar eclipses within a specified time interval
+using Skyfield ephemerides and custom project utilities.
 """
 
-from skyfield.api import load, GREGORIAN_START
 import math
 
-import psenarrow  # Custom module for precise eclipse timing
-import pconstants  # Custom module with constants like MOON_RADIUS_KM, SUN_RADIUS_KM
-import pdefilepath  # Custom module with ephemeris file paths
-import pedatetime  # Custom datetime class used in this project
+from skyfield.api import load, GREGORIAN_START
+
+import psenarrow       # Precise eclipse timing
+import pconstants      # Physical constants like MOON_RADIUS_KM, SUN_RADIUS_KM
+import pdefilepath     # Ephemeris file paths
+import pedatetime      # Custom datetime class
 
 
 def sefinder(
     start_time: pedatetime.datetime,
     end_time: pedatetime.datetime,
     step: pedatetime.timedelta,
-    tt: bool,
-    printsep: bool
+    tt_enable: bool = False,
+    printsep: bool = False,
 ) -> None:
     """
-    Search for possible solar eclipses within a given time range.
+    Search for potential solar eclipses within a given time range.
 
     Parameters
     ----------
     start_time : pedatetime.datetime
-        The start of the search interval.
+        Start of the search interval.
     end_time : pedatetime.datetime
-        The end of the search interval.
-    printsep : bool
+        End of the search interval.
+    step : pedatetime.timedelta
+        Step size for scanning the interval.
+    tt_enable : bool, default False
+        Whether to apply TT/ΔT correction to the refined eclipse time.
+    printsep : bool, default False
         Whether to print the minimum angular separation along with the date.
-    step: pedatetime.timedelta
-        Step size for scanning the time interval.
 
     Notes
     -----
-    This function scans the time range in `shrs`-hour steps to detect potential
-    eclipses based on the angular separation between the Sun and Moon and
-    a geometric threshold.
+    The function scans the interval in steps of `step` and detects potential
+    eclipses based on angular separation and geometric thresholds. Detected
+    eclipses are refined using `psenarrow.senarrow`.
     """
-
-    # Load planetary ephemeris (e.g., DE441)
+    # Load ephemerides and timescale
     eph = load(pdefilepath.EPHEM_PATH)
+    ts = load.timescale()
+    ts.julian_calendar_cutoff = GREGORIAN_START
 
-    # Load Skyfield timescale for converting datetimes
-    timescale = load.timescale()
-    timescale.julian_calendar_cutoff = GREGORIAN_START
-
-    # Extract Earth, Sun, and Moon objects for position calculations
     earth, sun, moon = eph["earth"], eph["sun"], eph["moon"]
 
-    # Initialize current scanning time
     current_time = start_time.copy()
 
-    # Loop through time interval
     while current_time <= end_time:
-        # Convert current time to Skyfield Time object
-        skyfield_time = timescale.utc(
+        # Convert current time to Skyfield Time object (UT1)
+        sf_time = ts.ut1(
             current_time.year,
             current_time.month,
             current_time.day,
@@ -68,58 +64,59 @@ def sefinder(
             current_time.second,
         )
 
-        # Compute apparent positions of Sun and Moon from Earth
-        sun_position = earth.at(skyfield_time).observe(sun)
-        moon_position = earth.at(skyfield_time).observe(moon)
-
-        # Compute angular separation (in radians) between Sun and Moon
-        angular_separation = (
-            moon_position.apparent().separation_from(sun_position.apparent()).radians
-        )
-
-        # Retrieve distances to Sun and Moon (in km)
-        _, _, sun_distance = sun_position.radec()
-        _, _, moon_distance = moon_position.radec()
-        sun_distance_km, moon_distance_km = sun_distance.km, moon_distance.km
-
-        # Compute eclipse geometry threshold (radians)
-        # Based on apparent radii of Moon and Sun and Earth's radius
-        eclipse_threshold = math.asin(
-            (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_distance_km
-        ) + math.asin(
-            (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_distance_km
-        )
-
-        # Check if current separation indicates a possible eclipse
-        if eclipse_threshold >= angular_separation:
-            # Estimate start time slightly before current scan time
-            start_estimate = current_time.copy()
-            start_estimate.sub_minute()
-
-            # Estimate end time a few hours after current scan time
-            end_estimate = current_time.copy()
-            end_estimate.add_hours(3)
-
-            # Refine to precise eclipse time and minimum angular separation
-            eclipse_date, min_separation = psenarrow.senarrow(
-                start_estimate, end_estimate, tt
+        if tt_enable:
+            sf_time = ts.tt(
+                current_time.year,
+                current_time.month,
+                current_time.day,
+                current_time.hour,
+                current_time.minute,
+                current_time.second,
             )
 
-            if tt:
-                eclipse_date = eclipse_date + str(" TT")
-            else :
-                eclipse_date = eclipse_date + str("Z")
-            # Print results if a valid eclipse is found
-            if eclipse_date:
-                if not printsep:
-                    # Only print date of maximum eclipse
-                    print(f"Approx: {eclipse_date}")
+        # Apparent positions of Sun and Moon
+        sun_pos = earth.at(sf_time).observe(sun).apparent()
+        moon_pos = earth.at(sf_time).observe(moon).apparent()
+
+        # Angular separation in radians
+        sep_angle: float = moon_pos.separation_from(sun_pos).radians
+
+        # Distances in kilometers
+        sun_dist_km: float = sun_pos.distance().km
+        moon_dist_km: float = moon_pos.distance().km
+
+        # Eclipse geometry threshold in radians
+        threshold: float = (
+            math.asin((pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_dist_km)
+            + math.asin((pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_dist_km)
+        )
+
+        # Potential eclipse detected
+        if sep_angle <= threshold:
+            # Estimate start slightly before current scan
+            start_est = current_time.copy()
+            start_est.sub_minute()
+
+            # Estimate end a few hours after current scan
+            end_est = current_time.copy()
+            end_est.add_hours(3)
+
+            # Refine eclipse time and minimum separation
+            eclipse_date, min_sep = psenarrow.senarrow(start_est, end_est, tt_enable)
+
+            # Add time system suffix for clarity
+            if eclipse_date is not None:
+                suffix: str = " TT" if tt_enable else " UT1"
+                eclipse_date = eclipse_date + suffix
+
+                # Print results
+                if printsep:
+                    print(f"{eclipse_date}, {min_sep} rad")
                 else:
-                    # Print date and minimum angular separation
-                    print(f"Approx: {eclipse_date}, Approx: {min_separation} rad")
+                    print(f"{eclipse_date}")
 
-            # Skip roughly one synodic month (~27 days) to avoid detecting same eclipse again
+            # Skip ~27 days to avoid detecting the same eclipse again
             current_time.add_days(27)
-
-        # Step forward by the specified timedelta
-        current_time = current_time + step
+        else:
+            # Advance by the specified step
+            current_time = current_time + step

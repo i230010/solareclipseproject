@@ -11,7 +11,7 @@ from pathlib import Path
 
 # Define the path to the ephemeris file relative to this script's location
 # This ensures the path works even if the script is run from a different folder
-EPHEM_PATH: str = str(Path(__file__).parent / "ephem" / "de441.bsp")
+EPHEM_PATH: str = str(Path(__file__).parent / "ephem" / "de421.bsp")
 
 # Example usage:
 # from pdefilepath import EPHEM_PATH

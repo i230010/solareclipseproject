@@ -1,56 +1,62 @@
 """
 psenarrow.py
------------------
-
-Provides a high-resolution search routine for locating the exact moment of
-closest angular approach between the Sun and Moon.
+------------
+High-resolution search for the exact moment of closest angular approach
+between the Sun and Moon within a given time interval.
 """
 
-from skyfield.api import load, GREGORIAN_START
 import math
+from typing import List, Optional, Tuple
 
-import pconstants  # Custom module containing constants like MOON_RADIUS_KM, EARTH_RADIUS_KM, SUN_RADIUS_KM
-import pdefilepath  # Custom module containing file paths for ephemerides
-import pedatetime  # Custom datetime class used in this project
+from skyfield.api import load, GREGORIAN_START
+
+import pconstants      # Physical constants (MOON_RADIUS_KM, SUN_RADIUS_KM, EARTH_RADIUS_KM)
+import pdefilepath     # Ephemeris file path
+import pedatetime      # Custom datetime class
 
 
 def senarrow(
-    starttime: pedatetime.datetime, endtime: pedatetime.datetime, tt: bool
-) -> tuple[str, float]:
+    starttime: pedatetime.datetime,
+    endtime: pedatetime.datetime,
+    tt_enable: bool = False,
+) -> Tuple[Optional[str], Optional[float]]:
     """
-    Finds the time and angular distance of the closest Sun-Moon approach
-    within the given time interval.
+    Find the time and angular distance of the closest Sun-Moon approach
+    (potential solar eclipse) within a given interval.
 
-    Args:
-        starttime (pedatetime.datetime): Start of search range (UTC)
-        endtime (pedatetime.datetime): End of search range (UTC)
+    Parameters
+    ----------
+    starttime : pedatetime.datetime
+        Start of the search interval (UTC)
+    endtime : pedatetime.datetime
+        End of the search interval (UTC)
+    tt_enable : bool, default False
+        Whether to apply TT/delta T correction to the resulting time.
 
-    Returns:
-        tuple:
-            date (str): Time of minimum separation in ISO format
-            min_sep_angle (float): Minimum angular separation (radians)
-            Returns (None, None) if no eclipse is detected.
+    Returns
+    -------
+    Tuple[Optional[str], Optional[float]]
+        ISO-format time of minimum separation and minimum angular separation
+        in radians. Returns (None, None) if no eclipse is detected.
     """
+    if starttime > endtime:
+        raise ValueError("starttime must be earlier than or equal to endtime")
 
-    # Lists to store angular separations and corresponding timestamps
-    angular_separations = []
-    timestamps = []
-
-    # Load planetary ephemerides and timescale
+    # Load ephemerides and timescale
     eph = load(pdefilepath.EPHEM_PATH)
     ts = load.timescale()
     ts.julian_calendar_cutoff = GREGORIAN_START
 
-    # Extract Earth, Sun, and Moon objects
     earth, sun, moon = eph["earth"], eph["sun"], eph["moon"]
 
-    # Initialize current scanning time
+    separations: List[float] = []
+    timestamps: List[pedatetime.datetime] = []
+
     current_time = starttime.copy()
 
-    # Iterate through each second in the interval
+    # Scan each second in the interval for closest approach
     while current_time <= endtime:
-        # Convert current time to Skyfield Time object
-        skyfield_time = ts.utc(
+        sf_time = ts.ut1(
             current_time.year,
             current_time.month,
             current_time.day,
@@ -59,61 +65,66 @@ def senarrow(
             current_time.second,
         )
 
-        # Compute apparent positions of Sun and Moon from Earth
-        sun_position = earth.at(skyfield_time).observe(sun)
-        moon_position = earth.at(skyfield_time).observe(moon)
+        if tt_enable:
+            sf_time = ts.tt(
+                current_time.year,
+                current_time.month,
+                current_time.day,
+                current_time.hour,
+                current_time.minute,
+                current_time.second,
+            )
 
-        # Compute angular separation (radians) between Moon and Sun
-        angular_separation = (
-            moon_position.apparent().separation_from(sun_position.apparent()).radians
+        # Apparent positions
+        sun_pos = earth.at(sf_time).observe(sun).apparent()
+        moon_pos = earth.at(sf_time).observe(moon).apparent()
+
+        # Angular separation in radians
+        sep_angle: float = moon_pos.separation_from(sun_pos).radians
+
+        # Distances to Sun and Moon in kilometers
+        sun_dist_km: float = sun_pos.distance().km
+        moon_dist_km: float = moon_pos.distance().km
+
+        # Eclipse threshold in radians based on apparent sizes
+        threshold: float = (
+            math.asin(
+                (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM)
+                / moon_dist_km
+            )
+            + math.asin(
+                (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM)
+                / sun_dist_km
+            )
         )
 
-        # Get distances of Sun and Moon from Earth in kilometers
-        _, _, sun_distance = sun_position.radec()
-        _, _, moon_distance = moon_position.radec()
-        sun_distance_km, moon_distance_km = sun_distance.km, moon_distance.km
+        if sep_angle <= threshold:
+            separations.append(sep_angle)
+            timestamps.append(current_time.copy())
 
-        # Compute eclipse geometry threshold (radians)
-        eclipse_threshold = math.asin(
-            (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_distance_km
-        ) + math.asin(
-            (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_distance_km
-        )
-
-        # Only consider times where separation is within eclipse threshold
-        if eclipse_threshold >= angular_separation:
-            angular_separations.append(angular_separation)  # Store angular separation
-            timestamps.append(current_time.copy())  # Store timestamp
-
-        # Move to the next second
+        # Move forward by 1 second
         current_time.add_second()
 
-    # Edge case: No times were within threshold
-    if not angular_separations:
+    # If no eclipse detected
+    if not separations:
         return None, None
 
-    # Find the minimum separation and corresponding timestamp
-    min_sep_angle = min(angular_separations)
-    min_index = angular_separations.index(min_sep_angle)
+    # Identify minimum angular separation and corresponding time
+    min_sep = min(separations)
+    min_index = separations.index(min_sep)
     min_time = timestamps[min_index]
 
-    # Add tt if the user wants
-    t = ts.utc(
-        min_time.year,
-        min_time.month,
-        min_time.day,
-        min_time.hour,
-        min_time.minute,
-        min_time.second,
-    )
-
-    return_time = min_time.copy()
-    if tt:
-        return_time = min_time.copy() + pedatetime.timedelta(
-            0, 0, 0, round(float(t.delta_t))
+    # Apply TT/delta T correction if requested
+    if tt_enable:
+        sf_min_time = ts.ut1(
+            min_time.year,
+            min_time.month,
+            min_time.day,
+            min_time.hour,
+            min_time.minute,
+            min_time.second,
         )
-    else:
-        return_time = min_time.copy()
+        delta_t_seconds = round(float(sf_min_time.delta_t))
+        min_time = min_time + pedatetime.timedelta(0, 0, 0, delta_t_seconds)
 
-    # Return ISO format time and minimum separation
-    return return_time.isoformat(), min_sep_angle
+    return min_time.isoformat(), min_sep

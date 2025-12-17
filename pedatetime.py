@@ -7,11 +7,10 @@ Custom datetime and timedelta classes for astronomical/historical calculations.
 Key characteristics:
 - No timezone support (all calculations are naive).
 - Second-by-second arithmetic ensures deterministic historical behavior.
-- Handles Gregorian calendar cutover (1582-10-05 → 1582-10-14).
+- Handles Gregorian calendar cutover (1582-10-05 -> 1582-10-14).
 - Normalizes fields (seconds, minutes, hours, days, months).
 - Designed specifically for astronomy, not as a replacement for Python's datetime.
 """
-
 
 # ---------------------------------------------------------------------------
 # Timedelta class
@@ -23,12 +22,10 @@ class timedelta:
     """
 
     def __init__(self, days: int, hours: int, minutes: int, seconds: int) -> None:
-        # Validate input types
         if not all(isinstance(value, int) for value in (days, hours, minutes, seconds)):
             raise TypeError("All timedelta arguments must be integers.")
         self.total_seconds = days * 86400 + hours * 3600 + minutes * 60 + seconds
 
-    # Arithmetic operations
     def __add__(self, other: "timedelta") -> "timedelta":
         if not isinstance(other, timedelta):
             return NotImplemented
@@ -42,7 +39,6 @@ class timedelta:
     def __neg__(self) -> "timedelta":
         return timedelta(0, 0, 0, -self.total_seconds)
 
-    # Comparison operators
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, timedelta):
             return NotImplemented
@@ -98,10 +94,7 @@ class datetime:
     def __init__(
         self, year: int, month: int, day: int, hour: int, minute: int, second: int
     ) -> None:
-        # Type checking
-        if not all(
-            isinstance(v, int) for v in (year, month, day, hour, minute, second)
-        ):
+        if not all(isinstance(v, int) for v in (year, month, day, hour, minute, second)):
             raise TypeError("All datetime components must be integers.")
         self.year = year
         self.month = month
@@ -114,10 +107,6 @@ class datetime:
     # Normalize datetime fields
     # ----------------------------------------------------------------------
     def normalize(self) -> None:
-        """
-        Adjusts seconds, minutes, hours, days, and months to valid ranges.
-        """
-        # Seconds
         while self.second < 0:
             self.second += 60
             self.minute -= 1
@@ -125,7 +114,6 @@ class datetime:
             self.second -= 60
             self.minute += 1
 
-        # Minutes
         while self.minute < 0:
             self.minute += 60
             self.hour -= 1
@@ -133,7 +121,6 @@ class datetime:
             self.minute -= 60
             self.hour += 1
 
-        # Hours
         while self.hour < 0:
             self.hour += 24
             self.day -= 1
@@ -141,7 +128,6 @@ class datetime:
             self.hour -= 24
             self.day += 1
 
-        # Days (backward)
         while self.day < 1:
             self.month -= 1
             if self.month < 1:
@@ -149,7 +135,6 @@ class datetime:
                 self.year -= 1
             self.day += max_day_in_month(self.year, self.month)
 
-        # Days (forward)
         while self.day > max_day_in_month(self.year, self.month):
             self.day -= max_day_in_month(self.year, self.month)
             self.month += 1
@@ -157,7 +142,6 @@ class datetime:
                 self.month = 1
                 self.year += 1
 
-        # Months
         while self.month < 1:
             self.month += 12
             self.year -= 1
@@ -169,10 +153,6 @@ class datetime:
     # Gregorian cutover adjustment
     # ----------------------------------------------------------------------
     def adjust_gregorian(self, adding: bool) -> None:
-        """
-        Adjusts dates around Gregorian cutover (1582-10-05 → 1582-10-14).
-        adding=True if adding time, False if subtracting time.
-        """
         if adding:
             if self.year == 1582 and self.month == 10 and 5 <= self.day <= 14:
                 self.day = 15
@@ -224,7 +204,7 @@ class datetime:
     def sub_day(self) -> None:
         self.day -= 1
         self.normalize()
-        self.adjust_gregorian(True)
+        self.adjust_gregorian(False)
 
     # ----------------------------------------------------------------------
     # Repeated increments/decrements
@@ -267,13 +247,11 @@ class datetime:
     def __add__(self, td: timedelta) -> "datetime":
         if not isinstance(td, timedelta):
             return NotImplemented
-
         result = self.copy()
         if td.total_seconds >= 0:
             result.add_seconds(td.total_seconds)
         else:
             result.sub_seconds(-td.total_seconds)
-
         return result
 
     def __sub__(self, other: object):
@@ -324,7 +302,14 @@ class datetime:
             self.hour,
             self.minute,
             self.second,
-        ) < (other.year, other.month, other.day, other.hour, other.minute, other.second)
+        ) < (
+            other.year,
+            other.month,
+            other.day,
+            other.hour,
+            other.minute,
+            other.second,
+        )
 
     def __le__(self, other: "datetime") -> bool:
         return self == other or self < other
@@ -342,11 +327,9 @@ class datetime:
     # Utility methods
     # ----------------------------------------------------------------------
     def copy(self) -> "datetime":
-        """Return a fresh copy of the datetime instance."""
         return datetime(
             self.year, self.month, self.day, self.hour, self.minute, self.second
         )
 
     def isoformat(self) -> str:
-        """Return ISO-8601 formatted string."""
         return f"{self.year:04d}-{self.month:02d}-{self.day:02d}T{self.hour:02d}:{self.minute:02d}:{self.second:02d}"

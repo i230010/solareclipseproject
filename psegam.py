@@ -1,53 +1,82 @@
 """
 psegam.py
------------------
-Computes the eclipse gamma parameter for a given moment in time.
+---------
+Compute the eclipse gamma parameter at a given moment in time.
+
+The gamma parameter represents the signed distance (in Earth radii)
+between the Moon's shadow axis and the Earth's center. By convention,
+gamma is negative when the shadow axis lies south of the Earth's equator.
 """
 
 import math
+from typing import Sequence
 
 
-def poly(coeffs: list, t: float) -> float:
+# ---------------------------------------------------------------------------
+# Polynomial utilities
+# ---------------------------------------------------------------------------
+
+def poly(coeffs: Sequence[float], t: float) -> float:
     """
     Evaluate a cubic polynomial at time t.
 
-    Polynomial form: a0 + a1*t + a2*t^2 + a3*t^3
+        P(t) = a0 + a1*t + a2*t^2 + a3*t^3
 
-    Args:
-        coeffs (list[float]): Coefficients [a0, a1, a2, a3]
-        t (float): Independent variable (time)
+    Parameters
+    ----------
+    coeffs : sequence of float
+        Cubic polynomial coefficients [a0, a1, a2, a3].
+    t : float
+        Independent variable (time).
 
-    Returns:
-        float: Polynomial value at t
+    Returns
+    -------
+    float
+        Polynomial value at time t.
     """
-    return coeffs[0] + coeffs[1] * t + coeffs[2] * t**2 + coeffs[3] * t**3
+    a0, a1, a2, a3 = coeffs
+    return a0 + a1 * t + a2 * t * t + a3 * t * t * t
 
 
-def gamma(x_coeffs: list, y_coeffs: list, t_max: float) -> float:
+# ---------------------------------------------------------------------------
+# Gamma computation
+# ---------------------------------------------------------------------------
+
+def gamma(
+    x_coeffs: Sequence[float],
+    y_coeffs: Sequence[float],
+    t_max: float,
+) -> float:
     """
-    Compute the eclipse gamma parameter at a given time.
+    Compute the eclipse gamma parameter.
 
-    Gamma represents the distance (in Earth radii) of the Moon's shadow
-    axis from Earth's center. Sign convention: negative if the shadow axis
-    is south of the equator (Y < 0).
+    Gamma is the signed distance (in Earth radii) of the Moon's shadow axis
+    from the Earth's center at the specified time.
 
-    Args:
-        x_coeffs (list[float]): Cubic coefficients for X Besselian element
-        y_coeffs (list[float]): Cubic coefficients for Y Besselian element
-        t_max (float): Time in Besselian time units
+    Sign convention:
+    - gamma < 0 -> shadow axis south of the equator (Y < 0)
+    - gamma > 0 -> shadow axis north of the equator (Y >= 0)
 
-    Returns:
-        float: Gamma parameter (signed distance from central eclipse line)
+    Parameters
+    ----------
+    x_coeffs : sequence of float
+        Cubic coefficients for the X Besselian element.
+    y_coeffs : sequence of float
+        Cubic coefficients for the Y Besselian element.
+    t_max : float
+        Time of maximum eclipse in Besselian time units.
+
+    Returns
+    -------
+    float
+        Signed gamma parameter.
     """
-    # Evaluate X and Y Besselian coordinates at t_max
+    # Evaluate X and Y Besselian elements at t_max
     x_val = poly(x_coeffs, t_max)
     y_val = poly(y_coeffs, t_max)
 
-    # Compute Euclidean distance from central eclipse line using math.hypot
+    # Compute distance from Earth's center using a stable Euclidean norm
     gamma_val = math.hypot(x_val, y_val)
 
-    # Apply sign convention: negative if Y coordinate is south
-    if y_val < 0:
-        gamma_val = -gamma_val
-
-    return gamma_val
+    # Apply sign convention based on the Y coordinate
+    return -gamma_val if y_val < 0.0 else gamma_val

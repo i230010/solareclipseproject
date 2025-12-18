@@ -1,57 +1,33 @@
 # Solar Eclipse Calculations
 
-This project demonstrates **solar eclipse computations** using Python, including:
+This project demonstrates **solar eclipse computations** in Python, including:
 
-* Eclipse search over a date range
-* Besselian elements calculation
-* Gamma value computation for the eclipse
+- Eclipse search over a specified date range
+- Besselian elements calculation
+- Gamma value computation
+- Maximum eclipse location (central eclipses)
+- Start and end times of the eclipse
+- Eclipse path plotting
 
-The project uses **Skyfield** for astronomical calculations, along with custom modules for Besselian and eclipse computations.
+The project uses **Skyfield** for astronomical calculations, along with custom modules for Besselian and eclipse-related computations.
 
+## Requirements
 
+- Python 3.14
+- JPL Development Ephemerides (DEXXX) files located in the `ephem/` directory
 
-
-
-## **Requirements**
-
-Python 3.14:
-
-JPL Development Ephemerides (DEXXX) at the "ephem" folder
-
-
-
-
-
-## **How to Run**
+## How to Run
 
 This project supports execution using **uv**, a fast Python package manager and runner.
 
-To run the main eclipse computation script: `uv run main.py`
+To run the main eclipse computation script:
 
+```bash
+uv run main.py
+```
 
+## Notes
 
+Accuracy may drift significantly when computing eclipses more than ±1000 years from the present.
 
-
-## **Notes**
-
-This code is for demonstrating how to compute solar eclipses using besselian elements
-
-Accuracy varies
-
-This project is for archiving solar eclipses from year range of dexxx
-
-I (the project owner) am a bit busy
-
-THERES A LOT OF PROBLEMS WITH THIS PROJECT SO I MAY TAKE TIME TO FIX THEM ALL
-
-
-
-
-
-## **TODO**
-
-Add Solar Eclipse Local Circumstances Calculator
-
-Add Penumbral/Umbral Limits
-
-Add Solar Eclipse Type
+Results have been compared against: https://ytliu.epizy.com/eclipse/solar_general.html

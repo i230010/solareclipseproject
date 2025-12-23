@@ -16,6 +16,7 @@ from typing import Sequence
 # Polynomial utilities
 # ---------------------------------------------------------------------------
 
+
 def poly(coeffs: Sequence[float], t: float) -> float:
     """
     Evaluate a cubic polynomial at time t.
@@ -41,6 +42,7 @@ def poly(coeffs: Sequence[float], t: float) -> float:
 # ---------------------------------------------------------------------------
 # Gamma computation
 # ---------------------------------------------------------------------------
+
 
 def gamma(
     x_coeffs: Sequence[float],

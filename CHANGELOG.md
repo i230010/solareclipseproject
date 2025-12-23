@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented below.
 
+## [1.0.7]
+
+### Changed
+- Changed mapping module plotly to cartopy
+- Changed normal Python round to new round function
+
 ## [1.0.6]
 
 ### Added

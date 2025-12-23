@@ -12,6 +12,7 @@ Key characteristics:
 - Designed specifically for astronomy, not as a replacement for Python's datetime.
 """
 
+
 # ---------------------------------------------------------------------------
 # Timedelta class
 # ---------------------------------------------------------------------------
@@ -94,7 +95,9 @@ class datetime:
     def __init__(
         self, year: int, month: int, day: int, hour: int, minute: int, second: int
     ) -> None:
-        if not all(isinstance(v, int) for v in (year, month, day, hour, minute, second)):
+        if not all(
+            isinstance(v, int) for v in (year, month, day, hour, minute, second)
+        ):
             raise TypeError("All datetime components must be integers.")
         self.year = year
         self.month = month

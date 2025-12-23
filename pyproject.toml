@@ -1,7 +1,7 @@
 [project]
 name = "solareclipseproject"
-version = "1.0.6"
-description = "Solar eclipse computations in Python"
+version = "1.0.7"
+description = "Solar Eclipse computations in Python"
 readme = "README.md"
 requires-python = ">=3.14"
 
@@ -20,10 +20,10 @@ classifiers = [
 ]
 
 dependencies = [
-    "kaleido>=1.2.0",
+    "cartopy>=0.25.0",
+    "matplotlib>=3.10.8",
     "numpy>=2.3.5",
     "pandas>=2.3.3",
-    "plotly>=6.5.0",
     "scipy>=1.16.3",
     "skyfield>=1.53",
     "vector>=1.7.0",

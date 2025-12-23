@@ -10,9 +10,9 @@ from typing import List, Optional, Tuple
 
 from skyfield.api import load, GREGORIAN_START
 
-import pconstants      # Physical constants (MOON_RADIUS_KM, SUN_RADIUS_KM, EARTH_RADIUS_KM)
-import pdefilepath     # Ephemeris file path
-import pedatetime      # Custom datetime class
+import pconstants  # Physical constants (MOON_RADIUS_KM, SUN_RADIUS_KM, EARTH_RADIUS_KM)
+import pdefilepath  # Ephemeris file path
+import pedatetime  # Custom datetime class
 
 
 def senarrow(
@@ -87,15 +87,10 @@ def senarrow(
         moon_dist_km: float = moon_pos.distance().km
 
         # Eclipse threshold in radians based on apparent sizes
-        threshold: float = (
-            math.asin(
-                (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM)
-                / moon_dist_km
-            )
-            + math.asin(
-                (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM)
-                / sun_dist_km
-            )
+        threshold: float = math.asin(
+            (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_dist_km
+        ) + math.asin(
+            (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_dist_km
         )
 
         if sep_angle <= threshold:
@@ -113,18 +108,5 @@ def senarrow(
     min_sep = min(separations)
     min_index = separations.index(min_sep)
     min_time = timestamps[min_index]
-
-    # Apply TT/delta T correction if requested
-    if tt_enable:
-        sf_min_time = ts.ut1(
-            min_time.year,
-            min_time.month,
-            min_time.day,
-            min_time.hour,
-            min_time.minute,
-            min_time.second,
-        )
-        delta_t_seconds = round(float(sf_min_time.delta_t))
-        min_time = min_time + pedatetime.timedelta(0, 0, 0, delta_t_seconds)
 
     return min_time.isoformat(), min_sep

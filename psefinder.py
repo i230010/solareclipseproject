@@ -9,10 +9,10 @@ import math
 
 from skyfield.api import load, GREGORIAN_START
 
-import psenarrow       # Precise eclipse timing
-import pconstants      # Physical constants like MOON_RADIUS_KM, SUN_RADIUS_KM
-import pdefilepath     # Ephemeris file paths
-import pedatetime      # Custom datetime class
+import psenarrow  # Precise eclipse timing
+import pconstants  # Physical constants like MOON_RADIUS_KM, SUN_RADIUS_KM
+import pdefilepath  # Ephemeris file paths
+import pedatetime  # Custom datetime class
 
 
 def sefinder(
@@ -86,9 +86,10 @@ def sefinder(
         moon_dist_km: float = moon_pos.distance().km
 
         # Eclipse geometry threshold in radians
-        threshold: float = (
-            math.asin((pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_dist_km)
-            + math.asin((pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_dist_km)
+        threshold: float = math.asin(
+            (pconstants.MOON_RADIUS_KM + pconstants.EARTH_RADIUS_KM) / moon_dist_km
+        ) + math.asin(
+            (pconstants.SUN_RADIUS_KM - pconstants.EARTH_RADIUS_KM) / sun_dist_km
         )
 
         # Potential eclipse detected

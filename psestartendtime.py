@@ -18,6 +18,7 @@ from scipy.optimize import brentq
 # Polynomial utilities
 # ---------------------------------------------------------------------------
 
+
 def poly(coeffs: Sequence[float], t: float) -> float:
     """
     Evaluate a cubic polynomial:
@@ -43,6 +44,7 @@ def poly(coeffs: Sequence[float], t: float) -> float:
 # ---------------------------------------------------------------------------
 # Eclipse distance function
 # ---------------------------------------------------------------------------
+
 
 def penumbra_distance(
     t: float,
@@ -81,6 +83,7 @@ def penumbra_distance(
 # ---------------------------------------------------------------------------
 # Start and end time solver
 # ---------------------------------------------------------------------------
+
 
 def startendtime(
     x_coeffs: Sequence[float],

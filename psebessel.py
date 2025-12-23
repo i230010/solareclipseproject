@@ -21,6 +21,7 @@ import pedatetime
 # Helper Functions
 # ---------------------------------------------------------------------------
 
+
 def km_to_earth_radii(km: float) -> float:
     """
     Convert a distance in kilometers to Earth radii.
@@ -31,6 +32,7 @@ def km_to_earth_radii(km: float) -> float:
 # ---------------------------------------------------------------------------
 # Compute Besselian Elements
 # ---------------------------------------------------------------------------
+
 
 def besselian_find(
     dt: pedatetime.datetime,
@@ -77,9 +79,9 @@ def besselian_find(
     shadow_dist = abs(shadow_vec)
     shadow_axis_angle = math.atan2(shadow_vec.y, shadow_vec.x)
     shadow_decl = math.asin(shadow_vec.z / shadow_dist)
-    sun_hour_angle = (
-        Angle(degrees=t_sf.gmst * 15).radians - shadow_axis_angle
-    ) % (2.0 * math.pi)
+    sun_hour_angle = (Angle(degrees=t_sf.gmst * 15).radians - shadow_axis_angle) % (
+        2.0 * math.pi
+    )
 
     moon_x = moon_radius_r * (
         math.cos(moon_dec_rad) * math.sin(moon_ra_rad - shadow_axis_angle)
@@ -128,6 +130,7 @@ def besselian_find(
 # First-Degree Polynomial Fit
 # ---------------------------------------------------------------------------
 
+
 def find_1st_degree_polynomial(
     val_0h: float,
     val_p1h: float,
@@ -147,6 +150,7 @@ def find_1st_degree_polynomial(
 # Third-Degree Polynomial Fit Using NumPy
 # ---------------------------------------------------------------------------
 
+
 def find_3rd_degree_polynomial(
     val_m2h: float,
     val_m1h: float,
@@ -161,9 +165,7 @@ def find_3rd_degree_polynomial(
     """
     # Matrix for times [-2, -1, 0, 1, 2]
     t = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=float)
-    b = np.array(
-        [val_m2h, val_m1h, val_0h, val_p1h, val_p2h], dtype=float
-    )
+    b = np.array([val_m2h, val_m1h, val_0h, val_p1h, val_p2h], dtype=float)
     A = np.column_stack([np.ones_like(t), t, t * t, t * t * t])
 
     # Solve least-squares system

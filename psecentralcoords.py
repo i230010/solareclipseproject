@@ -22,6 +22,7 @@ import pconstants
 # Polynomial evaluation utility
 # ---------------------------------------------------------------------------
 
+
 def poly(coeffs: Sequence[float], t: float) -> float:
     """
     Evaluate a cubic polynomial at time t.
@@ -47,6 +48,7 @@ def poly(coeffs: Sequence[float], t: float) -> float:
 # ---------------------------------------------------------------------------
 # Geodetic coordinate computation
 # ---------------------------------------------------------------------------
+
 
 def coords(
     x_coeffs: Sequence[float],
@@ -91,7 +93,7 @@ def coords(
     # -----------------------------------------------------------------------
     # Ellipsoid correction factors
     # -----------------------------------------------------------------------
-    e2 = pconstants.E_SQUARED            # Earth's eccentricity squared
+    e2 = pconstants.E_SQUARED  # Earth's eccentricity squared
     one_minus_f = pconstants.ONE_MINUS_F  # 1 - flattening factor
 
     omega = 1.0 / math.sqrt(1.0 - e2 * math.cos(d_rad) ** 2)
@@ -130,9 +132,7 @@ def coords(
     # Corrected longitude (lambda_geo)
     # -----------------------------------------------------------------------
     lambda_geo = (
-        m_rad
-        - H
-        - pconstants.DELTA_LAMBDA_FACTOR * delta_t * math.pi / 180.0
+        m_rad - H - pconstants.DELTA_LAMBDA_FACTOR * delta_t * math.pi / 180.0
     ) % (2.0 * math.pi)
 
     # Convert to degrees

@@ -6,7 +6,7 @@ between the Sun and Moon within a given time interval.
 """
 
 import math
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from skyfield.api import load, GREGORIAN_START
 
@@ -19,7 +19,7 @@ def senarrow(
     starttime: pedatetime.datetime,
     endtime: pedatetime.datetime,
     tt_enable: bool = False,
-) -> Tuple[Optional[str], Optional[float]]:
+) -> Tuple[str | None, float | None]:
     """
     Find the time and angular distance of the closest Sun-Moon approach
     (potential solar eclipse) within a given interval.
@@ -35,9 +35,8 @@ def senarrow(
 
     Returns
     -------
-    Tuple[Optional[str], Optional[float]]
-        ISO-format time of minimum separation and minimum angular separation
-        in radians. Returns (None, None) if no eclipse is detected.
+    Tuple[str | None, float | None]
+        ISO-formatted time (TT or UT1) and minimum angular separation in radians. Returns (None, None) if no eclipse is detected.
     """
     if starttime > endtime:
         raise ValueError("starttime must be earlier than or equal to endtime")
@@ -52,7 +51,7 @@ def senarrow(
     separations: List[float] = []
     timestamps: List[pedatetime.datetime] = []
 
-    current_time = starttime.copy()
+    current_time: pedatetime.datetime = starttime.copy()
 
     # Scan each second in the interval for closest approach
     while current_time <= endtime:
@@ -105,8 +104,8 @@ def senarrow(
         return None, None
 
     # Identify minimum angular separation and corresponding time
-    min_sep = min(separations)
-    min_index = separations.index(min_sep)
-    min_time = timestamps[min_index]
+    min_sep: float = min(separations)
+    min_index: int = separations.index(min_sep)
+    min_time: pedatetime.datetime = timestamps[min_index]
 
     return min_time.isoformat(), min_sep

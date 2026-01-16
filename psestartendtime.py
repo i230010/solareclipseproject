@@ -8,7 +8,7 @@ The zero crossings of the distance function correspond to the
 first and last contact of the eclipse shadow with the Earth.
 """
 
-from typing import Sequence, Tuple
+from typing import List, Tuple
 import math
 
 from scipy.optimize import brentq
@@ -16,29 +16,26 @@ from scipy.optimize import brentq
 
 # ---------------------------------------------------------------------------
 # Polynomial utilities
-# ---------------------------------------------------------------------------
 
 
-def poly(coeffs: Sequence[float], t: float) -> float:
+def poly(coeffs: List[float], t: float) -> float:
     """
     Evaluate a cubic polynomial:
-
         P(t) = c0 + c1*t + c2*t^2 + c3*t^3
 
     Parameters
     ----------
-    coeffs : sequence of float
-        Cubic polynomial coefficients [c0, c1, c2, c3].
+    coeffs : list of float
+        Polynomial coefficients [c0, c1, c2, c3].
     t : float
-        Time variable.
+        Input variable (time).
 
     Returns
     -------
     float
-        Polynomial value at time t.
+        Polynomial evaluated at t.
     """
-    c0, c1, c2, c3 = coeffs
-    return c0 + c1 * t + c2 * t * t + c3 * t * t * t
+    return coeffs[0] + coeffs[1] * t + coeffs[2] * t * t + coeffs[3] * t * t * t
 
 
 # ---------------------------------------------------------------------------
@@ -48,9 +45,9 @@ def poly(coeffs: Sequence[float], t: float) -> float:
 
 def penumbra_distance(
     t: float,
-    x_coeffs: Sequence[float],
-    y_coeffs: Sequence[float],
-    l_coeffs: Sequence[float],
+    x_coeffs: List[float],
+    y_coeffs: List[float],
+    l_coeffs: List[float],
 ) -> float:
     """
     Compute the distance function whose zero defines shadow contact.
@@ -72,9 +69,9 @@ def penumbra_distance(
     float
         Signed distance value.
     """
-    x = poly(x_coeffs, t)
-    y = poly(y_coeffs, t)
-    radius = poly(l_coeffs, t)
+    x: float = poly(x_coeffs, t)
+    y: float = poly(y_coeffs, t)
+    radius: float = poly(l_coeffs, t)
 
     # hypot(x, y) computes sqrt(x^2 + y^2) in a numerically stable way
     return math.hypot(x, y) - (1.0 + radius)
@@ -86,15 +83,15 @@ def penumbra_distance(
 
 
 def startendtime(
-    x_coeffs: Sequence[float],
-    y_coeffs: Sequence[float],
-    l_coeffs: Sequence[float],
+    x_coeffs: List[float],
+    y_coeffs: List[float],
+    l_coeffs: List[float],
     t_start: float = -6.0,
     t_mid: float = 0.0,
     t_end: float = 6.0,
 ) -> Tuple[float, float]:
     """
-    Solve for the start and end times of penumbral or umbral contact.
+    Solve for the start and end times of penumbral or umbral contact (TT).
 
     This function assumes the eclipse event is centered near t = 0 and
     that the distance function changes sign across the provided brackets.
@@ -113,7 +110,7 @@ def startendtime(
     Returns
     -------
     tuple of float
-        (start_time, end_time) in the same units as the input polynomials.
+        (start_time in TT, end_time in TT) in the same units as the input polynomials.
 
     Raises
     ------
@@ -121,7 +118,7 @@ def startendtime(
         If the root is not bracketed within the provided intervals.
     """
     # Solve for first contact (ingress)
-    start_time = brentq(
+    start_time: float = brentq(
         penumbra_distance,
         t_start,
         t_mid,
@@ -129,7 +126,7 @@ def startendtime(
     )
 
     # Solve for last contact (egress)
-    end_time = brentq(
+    end_time: float = brentq(
         penumbra_distance,
         t_mid,
         t_end,

@@ -34,7 +34,7 @@ def sefinder(
     step : pedatetime.timedelta
         Step size for scanning the interval.
     tt_enable : bool, default False
-        Whether to apply TT/ΔT correction to the refined eclipse time.
+        Whether to apply TT/ΔT correction to the refined eclipse time (TT or UT1 time).
     printsep : bool, default False
         Whether to print the minimum angular separation along with the date.
 
@@ -51,7 +51,7 @@ def sefinder(
 
     earth, sun, moon = eph["earth"], eph["sun"], eph["moon"]
 
-    current_time = start_time.copy()
+    current_time: pedatetime.datetime = start_time.copy()
 
     while current_time <= end_time:
         # Convert current time to Skyfield Time object (UT1)
@@ -95,7 +95,7 @@ def sefinder(
         # Potential eclipse detected
         if sep_angle <= threshold:
             # Estimate start slightly before current scan
-            start_est = current_time.copy()
+            start_est: pedatetime.datetime = current_time.copy()
             start_est.sub_minute()
 
             # Estimate end a few hours after current scan
@@ -108,7 +108,7 @@ def sefinder(
             # Add time system suffix for clarity
             if eclipse_date is not None:
                 suffix: str = " TT" if tt_enable else " UT1"
-                eclipse_date = eclipse_date + suffix
+                eclipse_date: str = eclipse_date + suffix
 
                 # Print results
                 if printsep:
@@ -120,4 +120,4 @@ def sefinder(
             current_time.add_days(27)
         else:
             # Advance by the specified step
-            current_time = current_time + step
+            current_time: pedatetime.datetime = current_time + step

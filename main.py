@@ -10,9 +10,11 @@ Demonstrates solar eclipse calculations, including:
 - Geographic coordinates of maximum eclipse
 - Eclipse start and end times
 - Plotting the eclipse path
+
+Note that t for evaluating Besselian Elements is in TT hours
 """
 
-from typing import List
+from typing import List  # noqa: F401
 
 from skyfield.api import GREGORIAN_START, load
 
@@ -21,6 +23,7 @@ import psebessel
 import psegam
 import psecentralcoords
 import psestartendtime
+import plocalcirumstances
 
 
 def decimal_hours(hours: int, minutes: int, seconds: int) -> float:
@@ -77,8 +80,9 @@ def main() -> None:
     ts = load.timescale()
     ts.julian_calendar_cutoff = GREGORIAN_START
 
-    # UT1 time of maximum eclipse
-    dt_max_ut1 = pedatetime.datetime(2024, 4, 8, 18, 17, 20)
+    # UT1 datetime of maximum eclipse (can change to TT or any timescale)
+    dt_max_ut1: pedatetime.datetime = pedatetime.datetime(2024, 4, 8, 18, 17, 20)
+    # dt_max_ut1: pedatetime.datetime = pedatetime.datetime(2025, 3, 29, 10, 47, 25)
     t_max = ts.ut1(
         dt_max_ut1.year,
         dt_max_ut1.month,
@@ -90,14 +94,16 @@ def main() -> None:
 
     # Delta-T in seconds (TT - UT1)
     delta_t_sec: int = round2(float(t_max.delta_t))
-    dt_max_tt = dt_max_ut1 + pedatetime.timedelta(0, 0, 0, delta_t_sec)
+    dt_max_tt: pedatetime.datetime = dt_max_ut1 + pedatetime.timedelta(
+        0, 0, 0, delta_t_sec
+    )
 
     print(f"Data for {dt_max_ut1.isoformat()} UT1 ({dt_max_tt.isoformat()} TT) Eclipse")
 
     # ------------------------------------------------------------------
     # Round to nearest hour for polynomial interpolation
     # ------------------------------------------------------------------
-    dt_max_rounded = dt_max_tt.copy()
+    dt_max_rounded: pedatetime.datetime = dt_max_tt.copy()
 
     if dt_max_tt.minute >= 30:
         dt_max_rounded.sub_minutes(dt_max_tt.minute)
@@ -153,8 +159,15 @@ def main() -> None:
     print(f"tan(f1) = {tan_f1:14.10f}  tan(f2) = {tan_f2:14.10f}")
 
     # ------------------------------------------------------------------
+    # T0 Eclipse Time
+    # ------------------------------------------------------------------
+    base_dt_hour: pedatetime.datetime = dt_max_rounded.copy()
+    print(f"T0: {base_dt_hour.isoformat()} TT")
+
+    # ------------------------------------------------------------------
     # Maximum Eclipse Time
     # ------------------------------------------------------------------
+
     decimal_time_tt: float = (dt_max_tt - dt_max_rounded.copy()).total_seconds / 3600.0
 
     print(f"Maximum Eclipse: {dt_max_tt.isoformat()} TT")
@@ -163,20 +176,45 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Gamma at Maximum Eclipse
     # ------------------------------------------------------------------
-    gamma_val: float = psegam.gamma(X_poly, Y_poly, decimal_time_tt)
+    gamma_val: float = psegam.gamma(X_poly, Y_poly, decimal_time_tt)  # ty:ignore[invalid-argument-type]
     print(f"Gamma: {gamma_val}")
 
     # ------------------------------------------------------------------
     # Maximum Eclipse Geographic Location
     # ------------------------------------------------------------------
-    lat_max, lon_max = psecentralcoords.coords(
-        X_poly,
-        Y_poly,
-        D_poly,
-        Micro_poly,
+    lat_max_umb, lon_max_umb = psecentralcoords.coords(
+        X_poly,  # ty:ignore[invalid-argument-type]
+        Y_poly,  # ty:ignore[invalid-argument-type]
+        D_poly,  # ty:ignore[invalid-argument-type]
+        Micro_poly,  # ty:ignore[invalid-argument-type]
         delta_t_sec,
         decimal_time_tt,
     )
+
+    if lat_max_umb is None and lon_max_umb is None:
+        import ppartialmaxcoords
+
+        lat_max, lon_max = ppartialmaxcoords.coords(
+            X_poly,  # ty:ignore[invalid-argument-type]
+            Y_poly,  # ty:ignore[invalid-argument-type]
+            D_poly,  # ty:ignore[invalid-argument-type]
+            Micro_poly,  # ty:ignore[invalid-argument-type]
+            L1_poly,  # ty:ignore[invalid-argument-type]
+            L2_poly,  # ty:ignore[invalid-argument-type]
+            tan_f1,
+            tan_f2,
+            base_dt_hour.hour,
+            delta_t_sec,
+        )
+    else:
+        lat_max, lon_max = psecentralcoords.coords(
+            X_poly,  # ty:ignore[invalid-argument-type]
+            Y_poly,  # ty:ignore[invalid-argument-type]
+            D_poly,  # ty:ignore[invalid-argument-type]
+            Micro_poly,  # ty:ignore[invalid-argument-type]
+            delta_t_sec,
+            decimal_time_tt,
+        )
 
     if lat_max is not None and lon_max is not None:
         print(f"Maximum Eclipse Location: {lat_max}, {lon_max}")
@@ -184,16 +222,14 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Eclipse Start and End Times
     # ------------------------------------------------------------------
-    base_dt_hour = dt_max_rounded.copy()
-    print(f"T0: {base_dt_hour.isoformat()} TT")
 
     # Penumbral contacts
-    t_start_pen, t_end_pen = psestartendtime.startendtime(X_poly, Y_poly, L1_poly)
+    t_start_pen, t_end_pen = psestartendtime.startendtime(X_poly, Y_poly, L1_poly)  # ty:ignore[invalid-argument-type]
 
-    tt_start_pen = base_dt_hour + pedatetime.timedelta(
+    tt_start_pen: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
         0, 0, 0, int(round2(t_start_pen * 3600))
     )
-    tt_end_pen = base_dt_hour + pedatetime.timedelta(
+    tt_end_pen: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
         0, 0, 0, int(round2(t_end_pen * 3600))
     )
 
@@ -201,13 +237,13 @@ def main() -> None:
     print(f"Eclipse End   (Penumbra): {tt_end_pen.isoformat()} TT")
 
     # Umbral contacts (only if central eclipse exists)
-    if lat_max is not None and lon_max is not None:
-        t_start_umb, t_end_umb = psestartendtime.startendtime(X_poly, Y_poly, L2_poly)
+    if lat_max_umb is not None and lon_max_umb is not None:
+        t_start_umb, t_end_umb = psestartendtime.startendtime(X_poly, Y_poly, L2_poly)  # ty:ignore[invalid-argument-type]
 
-        tt_start_umb = base_dt_hour + pedatetime.timedelta(
+        tt_start_umb: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
             0, 0, 0, int(round2(t_start_umb * 3600))
         )
-        tt_end_umb = base_dt_hour + pedatetime.timedelta(
+        tt_end_umb: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
             0, 0, 0, int(round2(t_end_umb * 3600))
         )
 
@@ -215,8 +251,66 @@ def main() -> None:
         print(f"Eclipse End   (Central Umbra): {tt_end_umb.isoformat()} TT")
 
     # ------------------------------------------------------------------
+    # Local Circumstances
+    # ------------------------------------------------------------------
+    obs_lat: float = 25.155
+    obs_lon: float = -104.174
+    obs_height_m: float = 100
+    print(f"Circumstances at {obs_lat}, {obs_lon}, Height {obs_height_m}m")
+    print("If no output that mean it is out of the eclipse region")
+    c1, c2, ge, c3, c4, mag, _ = plocalcirumstances.get_local_circumstances(
+        X_poly,
+        Y_poly,
+        D_poly,
+        Micro_poly,
+        L1_poly,
+        L2_poly,
+        tan_f1,
+        tan_f2,
+        base_dt_hour.hour,
+        obs_lat,
+        obs_lon,
+        obs_height_m,
+        delta_t_sec,
+    )
+    if c1 is not None:
+        C1: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c1 * 3600)))
+        print(f"C1: {C1.isoformat()} TT")
+    if c2 is not None:
+        C2: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c2 * 3600)))
+        print(f"C2: {C2.isoformat()} TT")
+    if ge is not None:
+        GE: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(ge * 3600)))
+        print(f"Greatest Eclipse: {GE.isoformat()} TT")
+        salt, saz, malt, maz = plocalcirumstances.sun_moon_pos(
+            X_poly,
+            Y_poly,
+            D_poly,
+            Micro_poly,
+            L1_poly,
+            L2_poly,
+            tan_f1,
+            tan_f2,
+            ge,
+            obs_lat,
+            obs_lon,
+            obs_height_m,
+            delta_t_sec,
+        )
+        print(f"Sun & Moon AltAz at GE {salt},{saz} & {malt},{maz}")
+    if c3 is not None:
+        C3: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c3 * 3600)))
+        print(f"C3: {C3.isoformat()} TT")
+    if c4 is not None:
+        C4: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c4 * 3600)))
+        print(f"C4: {C4.isoformat()} TT")
+    if mag is not None:
+        print(f"Magnitude: {mag}")
+
+    # ------------------------------------------------------------------
     # Compute Eclipse Path for Plotting
     # ------------------------------------------------------------------
+    
     if lat_max is not None and lon_max is not None:
         step_seconds: int = 60
         step_hours: float = decimal_hours(0, 0, step_seconds)
@@ -230,10 +324,10 @@ def main() -> None:
             current_time += step_hours
 
             lat, lon = psecentralcoords.coords(
-                X_poly,
-                Y_poly,
-                D_poly,
-                Micro_poly,
+                X_poly,  # ty:ignore[invalid-argument-type]
+                Y_poly,  # ty:ignore[invalid-argument-type]
+                D_poly,  # ty:ignore[invalid-argument-type]
+                Micro_poly,  # ty:ignore[invalid-argument-type]
                 delta_t_sec,
                 current_time,
             )
@@ -276,6 +370,7 @@ def main() -> None:
 
         ax.set_global()
         fig.savefig("central_path.png")
+    
 
 
 if __name__ == "__main__":

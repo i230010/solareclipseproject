@@ -11,7 +11,7 @@ The computation accounts for:
 """
 
 import math
-from typing import Sequence, Tuple
+from typing import List, Tuple
 
 from skyfield.units import Angle
 
@@ -23,26 +23,24 @@ import pconstants
 # ---------------------------------------------------------------------------
 
 
-def poly(coeffs: Sequence[float], t: float) -> float:
+def poly(coeffs: List[float], t: float) -> float:
     """
-    Evaluate a cubic polynomial at time t.
-
-        P(t) = a0 + a1*t + a2*t^2 + a3*t^3
+    Evaluate a cubic polynomial:
+        P(t) = c0 + c1*t + c2*t^2 + c3*t^3
 
     Parameters
     ----------
-    coeffs : Sequence[float]
-        Cubic polynomial coefficients [a0, a1, a2, a3].
+    coeffs : list of float
+        Polynomial coefficients [c0, c1, c2, c3].
     t : float
-        Time parameter (e.g., Julian date or Besselian time).
+        Input variable (time).
 
     Returns
     -------
     float
-        Polynomial value at time t.
+        Polynomial evaluated at t.
     """
-    a0, a1, a2, a3 = coeffs
-    return a0 + a1 * t + a2 * t * t + a3 * t * t * t
+    return coeffs[0] + coeffs[1] * t + coeffs[2] * t * t + coeffs[3] * t * t * t
 
 
 # ---------------------------------------------------------------------------
@@ -51,13 +49,13 @@ def poly(coeffs: Sequence[float], t: float) -> float:
 
 
 def coords(
-    x_coeffs: Sequence[float],
-    y_coeffs: Sequence[float],
-    d_coeffs: Sequence[float],
-    m_coeffs: Sequence[float],
+    x_coeffs: List[float],
+    y_coeffs: List[float],
+    d_coeffs: List[float],
+    m_coeffs: List[float],
     delta_t: float,
     t: float,
-) -> Tuple[float, float]:
+) -> Tuple[float | None, float | None]:
     """
     Compute geodetic latitude and longitude of the eclipse shadow axis.
 
@@ -69,8 +67,7 @@ def coords(
     delta_t : float
         Delta-T correction in minutes used for longitude adjustment.
     t : float
-        Time used for polynomial evaluation (e.g., Julian date or
-        Besselian time).
+        Time used for polynomial evaluation (time)
 
     Returns
     -------
@@ -85,62 +82,64 @@ def coords(
     # -----------------------------------------------------------------------
     # Evaluate Besselian polynomials at time t
     # -----------------------------------------------------------------------
-    X = poly(x_coeffs, t)
-    Y = poly(y_coeffs, t)
-    d_rad = Angle(degrees=poly(d_coeffs, t)).radians  # declination in radians
-    m_rad = Angle(degrees=poly(m_coeffs, t)).radians  # Greenwich hour angle in radians
+    X: float = poly(x_coeffs, t)
+    Y: float = poly(y_coeffs, t)
+    d_rad: float = Angle(degrees=poly(d_coeffs, t)).radians  # declination in radians
+    m_rad: float = Angle(
+        degrees=poly(m_coeffs, t)
+    ).radians  # Greenwich hour angle in radians
 
     # -----------------------------------------------------------------------
     # Ellipsoid correction factors
     # -----------------------------------------------------------------------
-    e2 = pconstants.E_SQUARED  # Earth's eccentricity squared
-    one_minus_f = pconstants.ONE_MINUS_F  # 1 - flattening factor
+    e2: float = pconstants.E_SQUARED  # Earth's eccentricity squared
+    one_minus_f: float = pconstants.ONE_MINUS_F  # 1 - flattening factor
 
-    omega = 1.0 / math.sqrt(1.0 - e2 * math.cos(d_rad) ** 2)
+    omega: float = 1.0 / math.sqrt(1.0 - e2 * math.cos(d_rad) ** 2)
 
-    y1 = omega * Y
-    b1 = omega * math.sin(d_rad)
-    b2 = one_minus_f * omega * math.cos(d_rad)
+    y1: float = omega * Y
+    b1: float = omega * math.sin(d_rad)
+    b2: float = one_minus_f * omega * math.cos(d_rad)
 
     # -----------------------------------------------------------------------
     # Radial distance term (B)
     # -----------------------------------------------------------------------
-    Bsq = 1.0 - X * X - y1 * y1
+    Bsq: float = 1.0 - X * X - y1 * y1
     if Bsq < 0.0:
         # Invalid geometry: eclipse shadow does not intersect Earth
         return None, None
-    B = math.sqrt(Bsq)
+    B: float = math.sqrt(Bsq)
 
     # -----------------------------------------------------------------------
     # Geocentric latitude (phi1)
     # -----------------------------------------------------------------------
-    sin_phi1 = B * b1 + y1 * b2
-    phi1 = math.asin(sin_phi1)
+    sin_phi1: float = B * b1 + y1 * b2
+    phi1: float = math.asin(sin_phi1)
 
     # Convert geocentric latitude to geodetic latitude
-    phi = math.atan(pconstants.ELLIPSOID_CORRECTION * math.tan(phi1))
-    cos_phi1 = math.cos(phi1)
+    phi: float = math.atan(pconstants.ELLIPSOID_CORRECTION * math.tan(phi1))
+    cos_phi1: float = math.cos(phi1)
 
     # -----------------------------------------------------------------------
     # Hour angle (H)
     # -----------------------------------------------------------------------
-    sin_H = X / cos_phi1
-    cos_H = (B * b2 - y1 * b1) / cos_phi1
-    H = math.atan2(sin_H, cos_H)
+    sin_H: float = X / cos_phi1
+    cos_H: float = (B * b2 - y1 * b1) / cos_phi1
+    H: float = math.atan2(sin_H, cos_H)
 
     # -----------------------------------------------------------------------
     # Corrected longitude (lambda_geo)
     # -----------------------------------------------------------------------
-    lambda_geo = (
+    lambda_geo: float = (
         m_rad - H - pconstants.DELTA_LAMBDA_FACTOR * delta_t * math.pi / 180.0
     ) % (2.0 * math.pi)
 
     # Convert to degrees
-    lat = Angle(radians=phi).degrees
-    lon = -Angle(radians=lambda_geo).degrees
+    lat: float = Angle(radians=phi).degrees  # ty:ignore[invalid-assignment]
+    lon: float = -Angle(radians=lambda_geo).degrees  # ty:ignore[unsupported-operator]
 
     # Normalize latitude to [-90, 90] and longitude to [-180, 180]
-    lat = ((lat + 90.0) % 180.0) - 90.0
-    lon = ((lon + 180.0) % 360.0) - 180.0
+    lat: float = ((lat + 90.0) % 180.0) - 90.0
+    lon: float = ((lon + 180.0) % 360.0) - 180.0
 
     return lat, lon

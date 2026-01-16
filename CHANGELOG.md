@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented below.
 
+## [2.0.0]
+
+### Added
+- Maximum Eclipse location for partial type Eclipses
+- Local Circumstances of an Eclipse
+
+### Fixed
+- Variable Types in the code
+
 ## [1.0.7]
 
 ### Changed
@@ -18,7 +27,7 @@ All notable changes to this project are documented below.
 - Updated Solar Eclipse Finder logic
 - Replaced GAST with GMST in Besselian elements calculation
 
-### Removeds
+### Removed
 - Central-eclipse conditional check
 - TT function from Solar Eclipse Finder
 

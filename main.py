@@ -23,7 +23,7 @@ import psebessel
 import psegam
 import psecentralcoords
 import psestartendtime
-import plocalcirumstances
+import pselocalcirumstances
 
 
 def decimal_hours(hours: int, minutes: int, seconds: int) -> float:
@@ -192,9 +192,9 @@ def main() -> None:
     )
 
     if lat_max_umb is None and lon_max_umb is None:
-        import ppartialmaxcoords
+        import psepartialmaxcoords
 
-        lat_max, lon_max = ppartialmaxcoords.coords(
+        lat_max, lon_max = psepartialmaxcoords.coords(
             X_poly,  # ty:ignore[invalid-argument-type]
             Y_poly,  # ty:ignore[invalid-argument-type]
             D_poly,  # ty:ignore[invalid-argument-type]
@@ -258,7 +258,7 @@ def main() -> None:
     obs_height_m: float = 100
     print(f"Circumstances at {obs_lat}, {obs_lon}, Height {obs_height_m}m")
     print("If no output that mean it is out of the eclipse region")
-    c1, c2, ge, c3, c4, mag, _ = plocalcirumstances.get_local_circumstances(
+    c1, c2, ge, c3, c4, mag, _ = pselocalcirumstances.get_local_circumstances(
         X_poly,
         Y_poly,
         D_poly,
@@ -274,15 +274,21 @@ def main() -> None:
         delta_t_sec,
     )
     if c1 is not None:
-        C1: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c1 * 3600)))
+        C1: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
+            0, 0, 0, int(round2(c1 * 3600))
+        )
         print(f"C1: {C1.isoformat()} TT")
     if c2 is not None:
-        C2: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c2 * 3600)))
+        C2: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
+            0, 0, 0, int(round2(c2 * 3600))
+        )
         print(f"C2: {C2.isoformat()} TT")
     if ge is not None:
-        GE: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(ge * 3600)))
+        GE: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
+            0, 0, 0, int(round2(ge * 3600))
+        )
         print(f"Greatest Eclipse: {GE.isoformat()} TT")
-        salt, saz, malt, maz = plocalcirumstances.sun_moon_pos(
+        salt, saz, malt, maz = pselocalcirumstances.sun_moon_pos(
             X_poly,
             Y_poly,
             D_poly,
@@ -299,10 +305,14 @@ def main() -> None:
         )
         print(f"Sun & Moon AltAz at GE {salt},{saz} & {malt},{maz}")
     if c3 is not None:
-        C3: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c3 * 3600)))
+        C3: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
+            0, 0, 0, int(round2(c3 * 3600))
+        )
         print(f"C3: {C3.isoformat()} TT")
     if c4 is not None:
-        C4: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(0, 0, 0, int(round2(c4 * 3600)))
+        C4: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
+            0, 0, 0, int(round2(c4 * 3600))
+        )
         print(f"C4: {C4.isoformat()} TT")
     if mag is not None:
         print(f"Magnitude: {mag}")
@@ -310,7 +320,25 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Compute Eclipse Path for Plotting
     # ------------------------------------------------------------------
-    
+    import setesting
+
+    setesting.test(
+        X_poly,
+        Y_poly,
+        D_poly,
+        Micro_poly,
+        L1_poly,
+        L2_poly,
+        tan_f1,
+        tan_f2,
+        decimal_time_tt,
+        delta_t_sec,
+    )
+
+    # ------------------------------------------------------------------
+    # Compute Eclipse Path for Plotting
+    # ------------------------------------------------------------------
+
     if lat_max is not None and lon_max is not None:
         step_seconds: int = 60
         step_hours: float = decimal_hours(0, 0, step_seconds)
@@ -370,7 +398,6 @@ def main() -> None:
 
         ax.set_global()
         fig.savefig("central_path.png")
-    
 
 
 if __name__ == "__main__":

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented below.
 
+## [2.0.1]
+
+### Added
+- Testing function for other Eclipse stuff
+
+### Fixed
+- File Names
+
+### Miscellonaies
+- Last Update (for now)
+
 ## [2.0.0]
 
 ### Added

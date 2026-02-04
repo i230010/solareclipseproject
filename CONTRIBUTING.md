@@ -1,6 +1,7 @@
 # Contributing
 
 Thanks for your interest in contributing to this project!
+The steps are just like any other pull request :P
 
 ## How to Contribute
 

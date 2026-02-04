@@ -10,8 +10,8 @@ All notable changes to this project are documented below.
 ### Fixed
 - File Names
 
-### Miscellonaies
-- Last Update (for now)
+### Miscellaneous
+- Last Update
 
 ## [2.0.0]
 

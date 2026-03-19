@@ -94,10 +94,10 @@ def coords(Xa: list, Ya: list, Da: list, Ma: list, delta_t: float, T: float) -> 
     # Convert geodetic latitude and longitude from radians to degrees
     lat_uncorrected, lon_uncorrected = (
         Angle(radians=phi).degrees,
-        (Angle(radians=lambda_geo).degrees * -1),
+        (Angle(radians=lambda_geo).degrees * -1),  # ty:ignore[unsupported-operator]
     )
 
     # Longitude is adjusted to fall within the range [-180, 180]
-    lat = ((lat_uncorrected + 90) % 180) - 90
+    lat = ((lat_uncorrected + 90) % 180) - 90  # ty:ignore[unsupported-operator]
     lon = ((lon_uncorrected + 180) % 360) - 180
     return lat, lon

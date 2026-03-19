@@ -67,8 +67,8 @@ def main() -> None:
     #
     # step = pedatetime.timedelta(0, 2, 0, 0)
     #
-    # psefinder.sefinder(dt_start, dt_end, step, False, False)
-    # psefinder.sefinder(dt_start, dt_end, step, False, True)  # include separation angle in radians
+    # psefinder.sefinder(dt_start, dt_end, step, False, False) # UT1
+    # psefinder.sefinder(dt_start, dt_end, step, False, True)  # sep angle + UT1
     # psefinder.sefinder(dt_start, dt_end, step, True, False)  # TT
     # psefinder.sefinder(dt_start, dt_end, step, True, True)  # sep angle + TT
 
@@ -82,7 +82,6 @@ def main() -> None:
 
     # UT1 datetime of maximum eclipse (can change to TT or any timescale)
     dt_max_ut1: pedatetime.datetime = pedatetime.datetime(2024, 4, 8, 18, 17, 20)
-    # dt_max_ut1: pedatetime.datetime = pedatetime.datetime(2025, 3, 29, 10, 47, 25)
     t_max = ts.ut1(
         dt_max_ut1.year,
         dt_max_ut1.month,
@@ -303,7 +302,7 @@ def main() -> None:
             obs_height_m,
             delta_t_sec,
         )
-        print(f"Sun & Moon AltAz at GE {salt},{saz} & {malt},{maz}")
+        print(f"Sun & Moon AltAz at GE (location) {salt},{saz} & {malt},{maz}")
     if c3 is not None:
         C3: pedatetime.datetime = base_dt_hour + pedatetime.timedelta(
             0, 0, 0, int(round2(c3 * 3600))
@@ -373,11 +372,11 @@ def main() -> None:
         fig = plt.figure(figsize=(8, 8))
         ax = plt.axes(projection=proj)
 
-        ax.add_feature(cfeature.OCEAN, facecolor="blue")
-        ax.add_feature(cfeature.LAND, facecolor="green")
-        ax.add_feature(cfeature.LAKES, facecolor="lightblue")
-        ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=1)
-        ax.coastlines(color="black", linewidth=0.8)
+        ax.add_feature(cfeature.OCEAN, facecolor="blue")  # ty:ignore[unresolved-attribute]
+        ax.add_feature(cfeature.LAND, facecolor="green")  # ty:ignore[unresolved-attribute]
+        ax.add_feature(cfeature.LAKES, facecolor="lightblue")  # ty:ignore[unresolved-attribute]
+        ax.add_feature(cfeature.BORDERS, edgecolor="black", linewidth=1)  # ty:ignore[unresolved-attribute]
+        ax.coastlines(color="black", linewidth=0.8)  # ty:ignore[unresolved-attribute]
 
         ax.plot(
             path_lons,
@@ -396,7 +395,7 @@ def main() -> None:
             transform=ccrs.PlateCarree(),
         )
 
-        ax.set_global()
+        ax.set_global()  # ty:ignore[unresolved-attribute]
         fig.savefig("central_path.png")
 
 

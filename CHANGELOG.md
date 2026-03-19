@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented below.
 
+## [2.0.2]
+
+### Miscellaneous
+- Remove "apparent" on `psefinder.py` and `psenarrow.py`
+
 ## [2.0.1]
 
 ### Added

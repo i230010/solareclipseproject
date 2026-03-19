@@ -74,9 +74,9 @@ def senarrow(
                 current_time.second,
             )
 
-        # Apparent positions
-        sun_pos = earth.at(sf_time).observe(sun).apparent()
-        moon_pos = earth.at(sf_time).observe(moon).apparent()
+        # Positions
+        sun_pos = earth.at(sf_time).observe(sun)
+        moon_pos = earth.at(sf_time).observe(moon)
 
         # Angular separation in radians
         sep_angle: float = moon_pos.separation_from(sun_pos).radians

@@ -1,5 +1,5 @@
+# THIS PROJECT IS ARCHIVED FOR RESEARCH PURPOSES
 # Solar Eclipse Calculations
-
 This project demonstrates **solar eclipse computations** in Python, including:
 
 - Eclipse search over a specified date range
